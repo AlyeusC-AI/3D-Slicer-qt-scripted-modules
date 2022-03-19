@@ -10,6 +10,7 @@ class RFLayoutType(IntEnum):
   RFDual3D = slicer.vtkMRMLLayoutNode.SlicerLayoutDual3DView
   RFTriple3D = slicer.vtkMRMLLayoutNode.SlicerLayoutTriple3DEndoscopyView
   RF3DOnly = slicer.vtkMRMLLayoutNode.SlicerLayoutOneUp3DView
+  RFAxialOnly = slicer.vtkMRMLLayoutNode.SlicerLayoutOneUpRedSliceView 
   RFDefaultLayout = slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView
   RFMain3DLayout = slicer.vtkMRMLLayoutNode.SlicerLayoutConventionalWidescreenView
   RFLineProfileLayout = slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpPlotView

@@ -162,6 +162,12 @@ class RFPanoramaWidget(RFViewerWidget):
 
         self.updateSliceDisplayedVolume()
 
+    def onModuleOpened(self):
+        """Override from RFViewerWidget"""
+        # TODO: 親クラスの下記処理実行した方が良い?
+        # self.initializeForUndo()
+        slicer.modules.RFVisualizationWidget.setSlicerLayout(RFLayoutType.RFAxialOnly)
+
 
 class RFPanoramaLogic(ScriptedLoadableModuleLogic):
     """Empty logic class for the module to avoid error report on module loading"""

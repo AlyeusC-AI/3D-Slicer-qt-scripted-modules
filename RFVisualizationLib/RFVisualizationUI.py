@@ -320,6 +320,7 @@ class RFVisualizationUI(qt.QWidget):
     selector.addItem(self.tr("3D Only"), RFLayoutType.RF3DOnly)
     selector.addItem(self.tr("Line Profile"), RFLayoutType.RFLineProfileLayout)
     selector.addItem(self.tr("Panorama"), RFLayoutType.RFPanoramaLayout)
+    selector.addItem(self.tr("Axial Only"), RFLayoutType.RFAxialOnly)
     # selector.addItem(self.tr("2 x 2"), RFLayoutType.RF2X2Layout)
     # selector.addItem(self.tr("3 x 3"), RFLayoutType.RF3X3Layout)
     # selector.addItem(self.tr("4 x 4"), RFLayoutType.RF4X4Layout)
