@@ -114,14 +114,17 @@ def layoutSetup(layoutManager):
   """
 
   panoramaLayout = r"""
-  <layout type="horizontal" split="true" >
-    <item splitSize="500">
+  <layout type="vertical" split="true" >
+    <item splitSize="400">
       {mainView}
     </item>
-    <item splitSize="300">
-      <layout type="vertical">
+    <item splitSize="400">
+      <layout type="horizontal">
         <item>
           {subViewTop}
+        </item>
+        <item>
+          {subViewMiddle}
         </item>
         <item>
           {subViewBottom}
@@ -129,7 +132,7 @@ def layoutSetup(layoutManager):
       </layout>
     </item>
   </layout>
-  """.format(mainView=panoramaFrontView, subViewTop=panoramaLateralView, subViewBottom=axialView)
+  """.format(mainView=panoramaFrontView, subViewTop=panoramaLateralView, subViewMiddle=axialView, subViewBottom=view3D)
 
   axialLayout = globalLayout.format(mainView=axialView, subViewTop=view3D, subViewMiddle=sagittalView, subViewBottom=coronalView)
   coronalLayout = globalLayout.format(mainView=coronalView, subViewTop=view3D, subViewMiddle=axialView, subViewBottom=sagittalView)
