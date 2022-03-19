@@ -368,6 +368,10 @@ class RFViewerHomeWidget(RFViewerWidget):
         AllResetButton.setIcon(Icons.AllReset)
         self._toolbarWidget.addButton(AllResetButton)
 
+        DebuggerAttachButton = createButton("", self.DebuggerAttach)
+        DebuggerAttachButton.setIcon(Icons.rightarrow)
+        self._toolbarWidget.addButton(DebuggerAttachButton)
+
     def _configureToolbarAnnotationSection(self):
         self._toolbarWidget.createSection(self.tr("Measuring Instruments"))
         # self._toolbarWidget.addButton(createButton(self.tr("Measuring Instruments"), self.loadAnnotationModule))
@@ -460,6 +464,28 @@ class RFViewerHomeWidget(RFViewerWidget):
         self._currentWidget.onModuleOpened()
         self._currentWidget.DVDexportButton.click()
     
+    def DebuggerAttach(self):
+        msg = qt.QMessageBox()
+        msg.setIcon(qt.QMessageBox.Information)
+
+        msg.setText("DebuggerのAttachをwaitします。")
+        msg.setInformativeText("よろしいですか？")
+ 
+        pButtonYes = msg.addButton("はい", qt.QMessageBox.YesRole)
+        msg.addButton("キャンセル", qt.QMessageBox.NoRole)
+        msg.exec_()
+
+        if msg.clickedButton() == pButtonYes:
+            import ptvsd 
+            ptvsd.enable_attach()
+            ptvsd.wait_for_attach()
+
+            msgAttached = qt.QMessageBox()
+            msgAttached.setIcon(qt.QMessageBox.Information)
+            msgAttached.setText("Debugger Attached!!")
+            msg.addButton("OK", qt.QMessageBox.NoRole)
+            msgAttached.exec_()
+ 
     def AllResetModule(self):
         
         msg = qt.QMessageBox()

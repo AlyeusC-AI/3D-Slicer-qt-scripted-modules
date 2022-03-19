@@ -64,10 +64,12 @@ class RFAnnotationWidget(RFViewerWidget):
     slicer.util.findChild(self._widget, "createAnglePushButton").setToolTip(self.tr("Create angle measurement"))
     # slicer.util.findChild(self._widget, "createOpenCurvePushButton").setToolTip(
     #   self.tr("Create panorama reconstruction curve"))
-    slicer.util.findChild(self._widget, "createLabel").hide()
-    slicer.util.findChild(self._widget, "createLinePushButton").hide()
-    slicer.util.findChild(self._widget, "createAnglePushButton").hide()
-    slicer.util.findChild(self._widget, "createOpenCurvePushButton").hide()
+
+    # TODO: Annotationボタンを利用して、Annotationできることを確認するため表示。最終的にはhideする
+    ## slicer.util.findChild(self._widget, "createLabel").hide()
+    ## slicer.util.findChild(self._widget, "createLinePushButton").hide()
+    ## slicer.util.findChild(self._widget, "createAnglePushButton").hide()
+    ## slicer.util.findChild(self._widget, "createOpenCurvePushButton").hide()
     # Translate qMRMLSubjectHierarchyTreeView
     tree = slicer.util.findChild(self._widget, "activeMarkupTreeView")
     treeHeaderTranslations = [

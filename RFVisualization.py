@@ -185,8 +185,8 @@ class RFVisualizationWidget(RFViewerWidget):
     # Setup the layout before trying to get the viewNode, else, they won't exist
     layoutType = self.ui.layoutSelector.currentData
     
-    if layoutType > RFLayoutType.RFPanoramaLayout:
-      layoutType = RFLayoutType.RFMainAxialLayout
+    # if layoutType > RFLayoutType.RFPanoramaLayout:
+    #   layoutType = RFLayoutType.RFMainAxialLayout
     
     self._layoutManager.setLayout(layoutType)
     if newLayout == RFLayoutType.RFTriple3D or newLayout == RFLayoutType.RFDual3D:
