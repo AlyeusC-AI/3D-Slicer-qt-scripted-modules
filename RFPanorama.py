@@ -184,7 +184,9 @@ class RFPanoramaWidget(RFViewerWidget):
         # self.initializeForUndo()
         slicer.modules.RFVisualizationWidget.setSlicerLayout(RFLayoutType.RFAxialOnly)
 
-        # TODO: カーブ作成モードにしちゃうと、最低一つ作られちゃう。無効化推奨。
+        self.removeNodeIfZeroLength()
+
+        # TODO: 要検討
         self.buttonCurve.animateClick()
 
     def updateWidgetUI(self):
@@ -218,7 +220,7 @@ class RFPanoramaWidget(RFViewerWidget):
     def nodeRemoved(self, *args):
         self.updateCurveButtonState()
 
-    # TODO: 実装中...距離0ノードなら削除。
+    # TODO: 実装中...距離0ノードなら削除。カナルも消える。RFAnnotation.pyのdeleteItem()にて。
     def removeNodeIfZeroLength(self):
         curveNode = self.getCurveNode()
         if curveNode is None:
@@ -235,13 +237,6 @@ class RFPanoramaWidget(RFViewerWidget):
         if isinstance(newNode, slicer.vtkMRMLMarkupsNode):
             newNode.SetUndoEnabled(True)
             setNodeVisibleInMainViewsOnly(newNode)
-            displayNode = newNode.GetDisplayNode()
-
-            if displayNode is not None:
-                displayNode.SetUseGlyphScale(True)
-                displayNode.SetGlyphScale(self.glyphScale)
-                displayNode.SetTextScale(self.textScale)
-                displayNode.SetSelectedColor(self.color.redF(), self.color.greenF(), self.color.blueF())
 
         # Force curve nodes to be Kochanek Splines for smoother curve
         if isinstance(newNode, slicer.vtkMRMLMarkupsCurveNode):
