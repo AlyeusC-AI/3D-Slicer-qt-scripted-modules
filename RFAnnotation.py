@@ -44,7 +44,7 @@ class RFAnnotationWidget(RFViewerWidget):
     markupsVLayout = self._widget.findChild("QVBoxLayout", "verticalLayout_2")
     markupsVLayout.insertWidget(1, self.canalWidget)
 
-    # self.buttonCurve = self._widget.findChild('QPushButton', 'createOpenCurvePushButton')
+    self.buttonCurve = self._widget.findChild('QPushButton', 'createOpenCurvePushButton')
     self.treeView = None
     self.connectSubjectHierarchy()
 
