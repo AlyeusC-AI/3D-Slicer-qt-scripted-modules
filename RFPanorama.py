@@ -1,4 +1,4 @@
-import qt
+import vtk, qt
 import slicer
 from slicer.ScriptedLoadableModule import *
 
@@ -6,6 +6,7 @@ from RFPanoramaLib import CurvedPlanarReformatLogic
 from RFViewerHomeLib import translatable, RFViewerWidget, createButton, removeNodeFromMRMLScene, horizontalSlider, \
     showVolumeOnSlices, WindowLevelUpdater, nodeID, getNodeByID
 from RFVisualizationLib import RFLayoutType, ViewTag
+from RFVisualizationLib import setNodeVisibleInMainViewsOnly
 
 
 class RFPanorama(ScriptedLoadableModule):
@@ -59,7 +60,22 @@ class RFPanoramaWidget(RFViewerWidget):
         advancedForm.addRow(self.tr("Panorama Depth (mm)"), self._panoramaDepthSlider)
 
         self.layout.addLayout(advancedForm)
-        self.layout.addWidget(createButton(self.tr("Panoramic View"), self.showPanoramicView))
+
+        buttonLayout = qt.QHBoxLayout()
+        buttonLayout.addWidget(createButton(self.tr("Panoramic View"), self.showPanoramicView))
+
+        self._widget = slicer.modules.markups.createNewWidgetRepresentation()
+        self._widget.setMRMLScene(slicer.mrmlScene)
+        self.buttonCurve = self._widget.findChild('QPushButton', 'createOpenCurvePushButton')
+        self.updateWidgetUI()
+        self.nodeRemovedObserverTag = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeRemovedEvent, self.nodeRemoved)
+        self.nodeAddedObserverTag = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeAddedEvent, self.nodeAdded)
+
+        buttonLayout.addWidget(self.buttonCurve)
+        self.layout.addLayout(buttonLayout)
+
+        self.layout.addWidget(self._widget)
+
         self.layout.addStretch()
 
     def setVolumeNode(self, volumeNode):
@@ -168,6 +184,71 @@ class RFPanoramaWidget(RFViewerWidget):
         # self.initializeForUndo()
         slicer.modules.RFVisualizationWidget.setSlicerLayout(RFLayoutType.RFAxialOnly)
 
+        # TODO: カーブ作成モードにしちゃうと、最低一つ作られちゃう。無効化推奨。
+        self.buttonCurve.animateClick()
+
+    def updateWidgetUI(self):
+        """
+        Update the default widget by hidding/adding new ui elements
+        """
+        collapsibleButtons = self._widget.findChildren('ctkCollapsibleButton')
+        for button in collapsibleButtons:
+            button.hide()
+
+        removedButtonsNames = ['createLinePushButton', 'createAnglePushButton', 'createFiducialPushButton', 'createClosedCurvePushButton', 'createPlanePushButton']
+        for buttonName in removedButtonsNames:
+            button = self._widget.findChild('QPushButton', buttonName)
+            if button is not None:
+                button.hide()
+
+        slicer.util.findChild(self._widget, "createLabel").hide()
+        # self.buttonCurve.hide()
+
+    def updateCurveButtonState(self):
+        """
+        Update button curve enable status
+        """
+        if self.buttonCurve is None:
+            return
+
+        # Only enable one curve node at a time
+        nbCurveMarkups = len(slicer.util.getNodesByClass('vtkMRMLMarkupsCurveNode'))
+        self.buttonCurve.setEnabled(nbCurveMarkups == 0)
+
+    def nodeRemoved(self, *args):
+        self.updateCurveButtonState()
+
+    # TODO: 実装中...距離0ノードなら削除。
+    def removeNodeIfZeroLength(self):
+        curveNode = self.getCurveNode()
+        if curveNode is None:
+            return
+        curveNode = slicer.util.getNodesByClass('vtkMRMLMarkupsCurveNode')[0]
+        curvePts = curveNode.GetCurvePointsWorld()
+        isClosedCurve = curveNode.IsA('vtkMRMLClosedCurveNode')
+        curveLengthMm = slicer.vtkMRMLMarkupsCurveNode.GetCurveLength(curvePts, isClosedCurve)
+        if curveLengthMm == 0.0:
+            removeNodeFromMRMLScene(curveNode)
+
+    @vtk.calldata_type(vtk.VTK_OBJECT)
+    def nodeAdded(self, caller, event, newNode):
+        if isinstance(newNode, slicer.vtkMRMLMarkupsNode):
+            newNode.SetUndoEnabled(True)
+            setNodeVisibleInMainViewsOnly(newNode)
+            displayNode = newNode.GetDisplayNode()
+
+            if displayNode is not None:
+                displayNode.SetUseGlyphScale(True)
+                displayNode.SetGlyphScale(self.glyphScale)
+                displayNode.SetTextScale(self.textScale)
+                displayNode.SetSelectedColor(self.color.redF(), self.color.greenF(), self.color.blueF())
+
+        # Force curve nodes to be Kochanek Splines for smoother curve
+        if isinstance(newNode, slicer.vtkMRMLMarkupsCurveNode):
+            newNode.SetUndoEnabled(True)
+            newNode.SetCurveTypeToKochanekSpline()
+
+        self.updateCurveButtonState()
 
 class RFPanoramaLogic(ScriptedLoadableModuleLogic):
     """Empty logic class for the module to avoid error report on module loading"""
