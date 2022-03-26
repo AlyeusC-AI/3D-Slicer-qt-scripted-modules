@@ -61,9 +61,6 @@ class RFPanoramaWidget(RFViewerWidget):
 
         self.layout.addLayout(advancedForm)
 
-        buttonLayout = qt.QHBoxLayout()
-        buttonLayout.addWidget(createButton(self.tr("Panoramic View"), self.showPanoramicView))
-
         self._widget = slicer.modules.markups.createNewWidgetRepresentation()
         self._widget.setMRMLScene(slicer.mrmlScene)
         self.buttonCurve = self._widget.findChild('QPushButton', 'createOpenCurvePushButton')
@@ -71,11 +68,9 @@ class RFPanoramaWidget(RFViewerWidget):
         self.nodeRemovedObserverTag = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeRemovedEvent, self.nodeRemoved)
         self.nodeAddedObserverTag = slicer.mrmlScene.AddObserver(slicer.vtkMRMLScene.NodeAddedEvent, self.nodeAdded)
 
-        buttonLayout.addWidget(self.buttonCurve)
-        self.layout.addLayout(buttonLayout)
-
         self.layout.addWidget(self._widget)
 
+        self.layout.addWidget(createButton(self.tr("Panoramic View"), self.showPanoramicView))
         self.layout.addStretch()
 
     def setVolumeNode(self, volumeNode):
@@ -204,7 +199,7 @@ class RFPanoramaWidget(RFViewerWidget):
                 button.hide()
 
         slicer.util.findChild(self._widget, "createLabel").hide()
-        # self.buttonCurve.hide()
+        self.buttonCurve.hide()
 
     def updateCurveButtonState(self):
         """
