@@ -167,8 +167,6 @@ class RFViewerHomeWidget(RFViewerWidget):
             self._configureToolbarPanoramaSection() 
         # self._configureToolbarPanoramaSection()     
 
-        # TODO: Loadするデータのせいか、Implant/Panorama Sectionボタンが設定されない。一時的に有効化
-        self._configureToolbarPanoramaSection()     
     # self._configureToolbarExportSection()
     #    self._configureUndoSection()
 
