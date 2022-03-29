@@ -215,7 +215,8 @@ class RFPanoramaWidget(RFViewerWidget):
     def nodeRemoved(self, *args):
         self.updateCurveButtonState()
 
-    # TODO: 実装中...距離0ノードなら削除。カナルも消える。RFAnnotation.pyのdeleteItem()にて。
+    # TODO: 実装中...距離0ノードなら削除。
+    # observerによって、カナルも消える。RFAnnotation.pyのremoveItem()参照。
     def removeNodeIfZeroLength(self):
         curveNode = self.getCurveNode()
         if curveNode is None:

@@ -92,7 +92,8 @@ class RFAnnotationWidget(RFViewerWidget):
 
   def removeItem(self, *args):
     self.lineProfileWidget.setMarkupNode(None)
-    self.canalWidget.deleteCanal()
+    # TODO: コードの意図確認。Annotation要素が削除されたらCanalも全削除される必要がある?
+    # self.canalWidget.deleteCanal()
 
   def __del__(self):
     slicer.mrmlScene.RemoveObserver(self.nodeRemovedObserverTag)
