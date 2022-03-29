@@ -91,8 +91,18 @@ class RFPanoramaWidget(RFViewerWidget):
         if None in [self._volumeNode, curveNode]:
             return
 
+        # 処理開始したことをユーザに通知
+        msg = qt.QProgressDialog('処理中です...', None, 0, 0)
+        msg.setWindowTitle('パノラマビュー')
+        msg.setCancelButton(0)
+
+        msg.show()
+        slicer.app.processEvents()
+ 
         self.straightenVolumeNodeAlongCurve(curveNode)
         self.showStraightenedVolume()
+
+        msg.done(0)
 
     def straightenVolumeNodeAlongCurve(self, curveNode):
         if self._straightenTransformNode is None:
