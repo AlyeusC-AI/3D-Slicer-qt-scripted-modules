@@ -47,6 +47,7 @@ class RFExportWidget(RFViewerWidget):
     )
     self.takeScreenshotButton.setToolTip(self.tr('Choose the path to save the file'))
     self.takeScreenshotButton.connect('clicked()', self.takeScreenshot)
+    #self.takeScreenshotButton.connect('clicked()', self.takeScreenshot1)
 
     # DICOM Export
     self.exportDicomButton = qt.QPushButton(self.tr('DICOM'))
@@ -127,10 +128,14 @@ class RFExportWidget(RFViewerWidget):
     # cap.showViewControllers(False)
     # cap.captureImageFromView(None, path)
     # cap.showViewControllers(True))
-  def takeScreenshot1(self, path):
+  def takeScreenshot1(self):
     """
     Take a screenshot of the full layout (3D + 2D views) and store as image
     """
+    path = qt.QFileDialog.getSaveFileName(None, self.tr('Save File'),
+                           self.tr('Screenshot.png'), self.tr('Images (*.png *.jpg)'))
+    if not path:
+      return
     
     cap = ScreenCapture.ScreenCaptureLogic()
     cap.showViewControllers(False)
@@ -147,7 +152,12 @@ class RFExportWidget(RFViewerWidget):
     slicer.util.forceRenderAllViews()
 
     # Grab the main window and use only the viewport's area
-    allViews = slicer.app.layoutManager().viewport()
+    #allViews = slicer.app.layoutManager().viewport()
+    # allViews = slicer.app.layoutManager().sliceWidget("Green")
+    allViews = slicer.app.layoutManager().sliceWidget("PanoramaFront")
+    # allViews = slicer.app.layoutManager().sliceWidget("Red")
+    # allViews = slicer.app.layoutManager().viewWidget()
+    
     topLeft = allViews.mapTo(slicer.util.mainWindow(), allViews.rect.topLeft())
     bottomRight = allViews.mapTo(slicer.util.mainWindow(), allViews.rect.bottomRight())
     imageSize = bottomRight - topLeft
