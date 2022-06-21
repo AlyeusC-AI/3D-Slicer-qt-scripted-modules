@@ -7,9 +7,7 @@ from DICOMLib import DICOMUtils
 from DICOMLib import DICOMExportScalarVolume
 import logging
 from functools import cmp_to_key
-from RFViewerHomeLib import ExportDirectorySettings
-from RFReconstruction import RFReconstructionLogic
-from datetime import datetime
+
 #
 # This is the plugin to handle translation of scalar volumes
 # from DICOM files into MRML nodes.  It follows the DICOM module's
@@ -237,10 +235,10 @@ class DICOMScalarVolumePluginClass(DICOMPlugin):
       for file in loadable.files:
         if slicer.dicomDatabase.fileValueExists(file,self.tags['pixelData']):
           newFiles.append(file)
-        if slicer.dicomDatabase.fileValue(file,self.tags['sopClassUID'])=='1.2.392.20036.9205.0.20210419184225209.0':
+        if slicer.dicomDatabase.fileValue(file,self.tags['sopClassUID'])=='1.2.840.10008.5.1.4.1.1.66.4':
           excludedLoadable = True
           logging.error('Please install Quantitative Reporting extension to enable loading of DICOM Segmentation objects')
-        elif slicer.dicomDatabase.fileValue(file,self.tags['sopClassUID'])=='1.2.392.20036.9205.0.20210419184225209.0':
+        elif slicer.dicomDatabase.fileValue(file,self.tags['sopClassUID'])=='1.2.840.10008.5.1.4.1.1.481.3':
           excludedLoadable = True
           logging.error('Please install SlicerRT extension to enable loading of DICOM RT Structure Set objects')
       if len(newFiles) > 0 and not excludedLoadable:
@@ -501,12 +499,7 @@ class DICOMScalarVolumePluginClass(DICOMPlugin):
     exportable.setTag('FrameOfReferenceInstanceUID', '')
 
     return [exportable]
-  def makeInt(self, s):
-        if type(s) == "string":
-            s = s.strip()
 
-        return int(s) if s else 0
- 
   def export(self,exportables):
     for exportable in exportables:
       # Get volume node to export
@@ -524,7 +517,7 @@ class DICOMScalarVolumePluginClass(DICOMPlugin):
       # Get output directory and create a subdirectory. This is necessary
       # to avoid overwriting the files in case of multiple exportables, as
       # naming of the DICOM files is static
-      directoryName = 'DICOM16'
+      directoryName = 'ScalarVolume_' + str(exportable.subjectHierarchyItemID)
       directoryDir = qt.QDir(exportable.directory)
       directoryDir.mkdir(directoryName)
       directoryDir.cd(directoryName)
@@ -542,146 +535,37 @@ class DICOMScalarVolumePluginClass(DICOMPlugin):
         error = "Unable to get patient for series '" + volumeNode.GetName() + "'"
         logging.error(error)
         return error
-      tags = {}
-      filePath = os.path.join(ExportDirectorySettings.load(), "NAOMICT_UTF8.mnri")
-      if not filePath:
-          return
-      try:
-          mnri_settings = RFReconstructionLogic.MNRISettings(filePath)
-          pid = mnri_settings.value("DicomPatientInfo/PatientId")
-      except:
-        pid = ""    
-      
-      tags['Patient Name'] = mnri_settings.value("DicomPatientInfo/PatientName")
-      tags['Patient ID'] = mnri_settings.value("DicomPatientInfo/PatientId")
-      tags['Patient Age'] = qt.QSettings().value("PatientAge")
-      
-      y = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthYear"))
-      m = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthMonth"))
-      d = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthDate"))
-      
-      if y > 0 and m > 0 and d > 0:
-        tags['Patient Birth Date'] = qt.QDate(y , m , d).toString("yyyyMMdd")
-      else:
-        tags['Patient Birth Date'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientBirthDateTagName())
-      
-      patientSex = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientSex"))
-      if patientSex == 1:
-          patientSexStr = "M"
-      elif patientSex == -1:
-          patientSexStr = "F"
-      else:
-          patientSexStr = "Unknown"
-      tags['Patient Sex'] = patientSexStr
 
+      # Assemble tags dictionary for volume export
+      tags = {}
+      tags['Patient Name'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientNameTagName())
+      tags['Patient ID'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientIDTagName())
+      tags['Patient Birth Date'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientBirthDateTagName())
+      tags['Patient Sex'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientSexTagName())
       tags['Patient Comments'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMPatientCommentsTagName())
-      
-      tags['Study ID'] = mnri_settings.value("DicomPatientInfo/StudyId")
-      tags['DicomBaseUID'] = mnri_settings.value("DicomConfigInfo/DicomBaseUID")
-      
-      y1 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionYear"))
-      m1 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionMonth"))
-      d1 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionDate"))
-      
-      if y1 > 0 and m1 > 0 and d1 > 0:
-        tags['Study Date'] = qt.QDate(y1 , m1 , d1).toString("yyyyMMdd")
-      else:
-        tags['Study Date'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMStudyDateTagName())
-      
-      
-      
-      h2 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionHour"))
-      m2 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionMinute"))
-      s2 = self.makeInt(mnri_settings.value("DicomCTScanInfo/AcquisitionSecond"))
-      
-      tags['Study Time'] = qt.QTime(h2 , m2 , s2).toString("hhmmss")+".000"
+      tags['Study ID'] = self.defaultStudyID
+      tags['Study Date'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMStudyDateTagName())
+      tags['Study Time'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMStudyTimeTagName())
       tags['Study Description'] = exportable.tag(slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMStudyDescriptionTagName())
-      tags['Modality'] = "CT"
+      tags['Modality'] = exportable.tag('Modality')
       tags['Manufacturer'] = exportable.tag('Manufacturer')
       tags['Model'] = exportable.tag('Model')
-      tags['Series Description'] = mnri_settings.value("DicomPatientInfo/SeriesDescription")
-      tags['Series Number'] = mnri_settings.value("DicomPatientInfo/SeriesNumber")
-      
-      datetime = qt.QDate.currentDate()
-      strnow = datetime.toString(qt.Qt.ISODate)
-      nowtime = qt.QTime.currentTime()
-      strnowtime = nowtime.toString(qt.Qt.ISODate)
-      strnow = strnow.replace("-","")
-      strnowtime = strnowtime.replace(":","")
-      
-      tags['Series Date'] = strnow
-      tags['Series Time'] = strnowtime + ".000"
-      tags['Content Date'] = strnow
-      tags['Content Time'] = strnowtime + ".000"
-      
-      tags['Media Storage SOP Instance UID'] = tags['DicomBaseUID'] +"0."+  strnow + strnowtime 
-      tags['Study Instance UID'] =   mnri_settings.value("DicomConfigInfo/DicomBaseUID") + "3." + strnow + strnowtime
-      
+      tags['Series Description'] = exportable.tag('SeriesDescription')
+      tags['Series Number'] = exportable.tag('SeriesNumber')
+      tags['Series Date'] = exportable.tag('SeriesDate')
+      tags['Series Time'] = exportable.tag('SeriesTime')
+      tags['Content Date'] = exportable.tag('ContentDate')
+      tags['Content Time'] = exportable.tag('ContentTime')
 
-      tags['Series Instance UID'] =  mnri_settings.value("DicomConfigInfo/DicomBaseUID") + "4." + strnow + strnowtime
-      tags['Frame of Reference UID'] = mnri_settings.value("DicomConfigInfo/DicomBaseUID") + "5." + strnow + strnowtime
-      
-      tags['Transfer Syntax UID'] = "1.2.392.20036.9205.0.20210419184225209.0"   
-      tags['Implementation Class UID'] = mnri_settings.value("DicomConfigInfo/ImplementationClassUID")   
-      tags['Frame of Reference Instance UID'] = mnri_settings.value("DicomConfigInfo/DicomBaseUID") + "5." + strnow + strnowtime
-      tags['Implementation Version Name'] = "OFFIS_DCMTK_360"
-      tags['Source Application Entity Title'] = mnri_settings.value("DicomConfigInfo/SourceApplicationEntityTitle") 
-      tags['Specific Character Set'] = "ISO 2022 IR 13\ISO 2022 IR 87" 
-      tags['Instance Creation Date'] = strnow
-      tags['Instance Creation Time'] = strnowtime
-      tags['SOP Instance UID'] = mnri_settings.value("DicomConfigInfo/DicomBaseUID") + "0." + strnow + strnowtime + ".0"
+      tags['Study Instance UID'] = exportable.tag('StudyInstanceUID')
+      tags['Series Instance UID'] = exportable.tag('SeriesInstanceUID')
+      tags['Frame of Reference Instance UID'] = exportable.tag('FrameOfReferenceInstanceUID')
 
-      tags['Protocol Name'] = mnri_settings.value("DicomConfigInfo/ProtocolName")
-      tags['Scan Options'] = "CIRCULAR"
-      tags['Contrast Bolus Agent'] = "CONTRAST"
-      tags['Software Versions'] = ""
-      tags['Distance Source to Detector'] = mnri_settings.value("Geometry/XSrcDetectDist")
-      tags['Distance Source to Patient'] = mnri_settings.value("Geometry/XSrcObjectDist")
-      tags['Rotation Direction'] = 'CW'
-      tags['Filter Type'] = "B"
-      tags['Convolution Kernel'] = "B"
-      tags['Patient Position'] = "HFS"
-      tags['Acquisition Number'] = "0"
-      tags['Instance Number'] = "0"
-      tags['Rows'] = mnri_settings.value("BackProjection/VolYDim")
-      tags['Columns'] = mnri_settings.value("BackProjection/VolXDim")
-      tags['Window Center'] = mnri_settings.value("SieraRE/WindowCenter")
-      tags['Window Width'] = mnri_settings.value("SieraRE/WindowWidth")
-      tags['Institution Name'] = mnri_settings.value("DicomConfigInfo/InstitutionName")
-      try:
-        tags['kvp'] = mnri_settings.value("DicomCTScanInfo/XRayVoltageKV")
-      except:
-        tags['kvp'] = "0"
-       
-      tags['Acquisition Date'] = tags['Study Date']
-      tags['Acquisition Time'] = tags['Study Time']
-      tags['Institution Address'] = mnri_settings.value("DicomConfigInfo/InstitutionAddress")
-      tags['Station Name'] = mnri_settings.value("DicomConfigInfo/StationName")
-      tags['Institutional Department Name'] = mnri_settings.value("DicomConfigInfo/InstitutionalDepartmentName")
-      tags['Performing Physician Name'] = mnri_settings.value("DicomCTScanInfo/PerformingPhysicianName")
-      tags['Operator Name'] = mnri_settings.value("DicomCTScanInfo/OperatorName")
-      # tags['Patients Age'] = ""
-      tags['Data Collection Diameter'] = "227.200012"
-      tags['Reconstruction Diameter'] = "158.28096"
-      tags['Estimated Radiographic Magnification Factor'] = "1.465116"
-      tags['Xray Tube Current'] = "0"
-      tags['Image Position'] = "-118.710716\-118.710716\-61.428572"
-      tags['Image Orientation'] = "1.000000\0.000000\0.000000\0.000000\1.000000\0.000000"
-      tags['Location'] = "-61.428572"
-      tags['Slice Location'] = "-61.428572"
-      tags['Number of Frames'] = "1"      
-      
-      
-      # tags['Frame of Reference Instance UID'] = qt.QSettings().value("FrameOfReferenceUID")
-      # msg = qt.QMessageBox()
-      # msg.setText(tags['Institution Name'])
-      # msg.exec_()
       # Validate tags
-      
-      # if tags['Modality'] == "":
-      #   error = "Empty modality for series '" + volumeNode.GetName() + "'"
-      #   logging.error(error)
-      #   return error
+      if tags['Modality'] == "":
+        error = "Empty modality for series '" + volumeNode.GetName() + "'"
+        logging.error(error)
+        return error
       #TODO: more tag checks
 
       # Perform export
@@ -690,9 +574,6 @@ class DICOMScalarVolumePluginClass(DICOMPlugin):
 
     # Success
     return ""
-
-
-
 
   class AcquisitionModeling(object):
     """Code for representing and analyzing acquisition properties in slicer

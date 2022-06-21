@@ -373,6 +373,10 @@ class RFViewerHomeWidget(RFViewerWidget):
         DebuggerAttachButton.setIcon(Icons.rightarrow)
         self._toolbarWidget.addButton(DebuggerAttachButton)
 
+        CaptureTestButton = createButton("", self.CaptureTest)
+        CaptureTestButton.setIcon(Icons.rightarrow)
+        self._toolbarWidget.addButton(CaptureTestButton)
+
     def _configureToolbarAnnotationSection(self):
         self._toolbarWidget.createSection(self.tr("Measuring Instruments"))
         # self._toolbarWidget.addButton(createButton(self.tr("Measuring Instruments"), self.loadAnnotationModule))
@@ -465,6 +469,65 @@ class RFViewerHomeWidget(RFViewerWidget):
         self._currentWidget.onModuleOpened()
         self._currentWidget.DVDexportButton.click()
     
+    def CaptureTest(self):
+        lm = slicer.app.layoutManager()
+        # switch on the type to get the requested window
+        widget = 0
+        # reset the type so that the node is set correctly
+        type = slicer.qMRMLScreenShotDialog.FullLayout
+
+        if type == slicer.qMRMLScreenShotDialog.FullLayout:
+            # full layout
+            widget = lm.viewport()
+        elif type == slicer.qMRMLScreenShotDialog.ThreeD:
+            # just the 3D window
+            widget = lm.threeDWidget(0).threeDView()
+        elif type == slicer.qMRMLScreenShotDialog.Red:
+            # red slice window
+            widget = lm.sliceWidget("Red")
+        elif type == slicer.qMRMLScreenShotDialog.Yellow:
+            # yellow slice window
+            widget = lm.sliceWidget("Yellow")
+        elif type == slicer.qMRMLScreenShotDialog.Green:
+            # green slice window
+            widget = lm.sliceWidget("Green")
+        else:
+            # default to using the full window
+            widget = slicer.util.mainWindow()
+
+        # grab and convert to vtk image data
+        qimage = ctk.ctkWidgetsUtils.grabWidget(widget)
+        imageData = vtk.vtkImageData()
+        slicer.qMRMLUtils().qImageToVtkImageData(qimage,imageData)
+
+        # annotationLogic = slicer.modules.annotations.logic()
+        # name = "hoge"
+        # description = "fugafuga"
+        # filePath = "C:\Users\yyyyy/hoge.png"
+        # annotationLogic.CreateSnapShot(name, description, type, 1.0, imageData)
+
+        # type = slicer.qMRMLScreenShotDialog.FullLayout
+
+        # snapshotNode = slicer.util.getNode(name)
+        
+        # if not snapshotNode:
+        #     print("Can't get snapshotNode")
+        #     return
+        
+        # if not slicer.util.saveNode(snapshotNode, filePath):
+        #     print("Can't save " + filePath)
+        #     return
+
+        msg = qt.QMessageBox()
+        msg.setIcon(qt.QMessageBox.Information)
+
+        msg.setText("Captureしました。")
+ 
+        pButtonYes = msg.addButton("はい", qt.QMessageBox.YesRole)
+        msg.addButton("キャンセル", qt.QMessageBox.NoRole)
+        msg.exec_()
+
+
     def DebuggerAttach(self):
         msg = qt.QMessageBox()
         msg.setIcon(qt.QMessageBox.Information)

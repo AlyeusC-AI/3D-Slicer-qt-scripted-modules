@@ -2,11 +2,6 @@ import os
 import vtk, qt, ctk, slicer
 import logging
 from SegmentEditorEffects import *
-import numpy as np
-from RFReconstruction import RFReconstructionLogic
-from RFViewerHomeLib import ExportDirectorySettings
-# from oct2py import *
-# from SegmentEditorSurfaceCutLib import SegmentEditorEffect
 
 @slicer.util.translatable
 class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
@@ -72,15 +67,13 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     return qt.QIcon()
 
   def helpText(self):
-#     return self.tr("""<html>Fill segment based on master volume intensity range<br>. Options:<p>
-# <ul style="margin: 0">
-# <li><b>Use for masking:</b> set the selected intensity range as <dfn>Editable intensity range</dfn> and switch to Paint effect.</li>
-# <li><b>Apply:</b> set the previewed segmentation in the selected segment. Previous contents of the segment is overwritten.</li>
-# </ul><p></html>""")
-      return ""
+    return self.tr("""<html>Fill segment based on master volume intensity range<br>. Options:<p>
+<ul style="margin: 0">
+<li><b>Use for masking:</b> set the selected intensity range as <dfn>Editable intensity range</dfn> and switch to Paint effect.</li>
+<li><b>Apply:</b> set the previewed segmentation in the selected segment. Previous contents of the segment is overwritten.</li>
+</ul><p></html>""")
 
   def activate(self):
-    
     self.setCurrentSegmentTransparent()
 
     # Update intensity range
@@ -155,15 +148,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.thresholdSlider.spinBoxAlignment = qt.Qt.AlignTop
     self.thresholdSlider.singleStep = 0.01
     self.scriptedEffect.addOptionsWidget(self.thresholdSlider)
-    # add
-    # self.thresholdSlider.minimumValue = -500
-    # self.thresholdSlider.maximumValue = 100
-    
-    self.thresholdSlider1 = ctk.ctkRangeWidget()
-    self.thresholdSlider1.spinBoxAlignment = qt.Qt.AlignTop
-    self.thresholdSlider1.singleStep = 1
-    self.scriptedEffect.addOptionsWidget(self.thresholdSlider1)
-    
+
     self.autoThresholdModeSelectorComboBox = qt.QComboBox()
     self.autoThresholdModeSelectorComboBox.addItem(self.tr("auto->maximum"), MODE_SET_LOWER_MAX)
     self.autoThresholdModeSelectorComboBox.addItem(self.tr("minimum->auto"), MODE_SET_MIN_UPPER)
@@ -171,7 +156,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.autoThresholdModeSelectorComboBox.addItem(self.tr("as upper"), MODE_SET_UPPER)
     self.autoThresholdModeSelectorComboBox.setToolTip(self.tr(
       "How to set lower and upper threshold values. Current refers to keeping the current value."))
-    self.autoThresholdModeSelectorComboBox.hide()
+
     self.autoThresholdMethodSelectorComboBox = qt.QComboBox()
     self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Otsu"), METHOD_OTSU)
     self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Huang"), METHOD_HUANG)
@@ -189,10 +174,9 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Shanbhag"), METHOD_SHANBHAG)
     self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Triangle"), METHOD_TRIANGLE)
     self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Yen"), METHOD_YEN)
-    self.autoThresholdMethodSelectorComboBox.addItem(self.tr("Custom"), METHOD_CUSTOM)
     self.autoThresholdMethodSelectorComboBox.setToolTip(self.tr(
       "Select method to compute threshold value automatically."))
-    # self.autoThresholdMethodSelectorComboBox.hide()
+
     self.selectPreviousAutoThresholdButton = qt.QToolButton()
     self.selectPreviousAutoThresholdButton.text = "<"
     self.selectPreviousAutoThresholdButton.setToolTip(self.tr(
@@ -224,7 +208,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     autoThresholdGroupBox.setLayout(autoThresholdFrame)
     autoThresholdGroupBox.collapsed = True
     self.scriptedEffect.addOptionsWidget(autoThresholdGroupBox)
-    # autoThresholdGroupBox.hide()
+
     histogramFrame = qt.QVBoxLayout()
 
     histogramBrushFrame = qt.QHBoxLayout()
@@ -341,7 +325,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     lowerHistogramLayout.addWidget(self.histogramLowerThresholdAverageButton)
     self.histogramLowerMethodButtonGroup.addButton(self.histogramLowerThresholdAverageButton)
 
-    lowerGroupBox.hide()
     ###
     # Upper histogram threshold buttons
 
@@ -372,21 +355,17 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.histogramUpperThresholdMaximumButton.clicked.connect(self.updateMRMLFromGUI)
     upperHistogramLayout.addWidget(self.histogramUpperThresholdMaximumButton)
     self.histogramUpperMethodButtonGroup.addButton(self.histogramUpperThresholdMaximumButton)
-    
-    upperGroupBox.hide()
 
     histogramGroupBox = ctk.ctkCollapsibleGroupBox()
     histogramGroupBox.setTitle(self.tr("Local histogram"))
     histogramGroupBox.setLayout(histogramFrame)
     histogramGroupBox.collapsed = True
     self.scriptedEffect.addOptionsWidget(histogramGroupBox)
-    # histogramGroupBox.hide()
+
     self.useForPaintButton = qt.QPushButton(self.tr("Use for masking"))
     self.useForPaintButton.setToolTip(self.tr("Use specified intensity range for masking and switch to Paint effect."))
     self.scriptedEffect.addOptionsWidget(self.useForPaintButton)
-    # self.useForPaintButton.hide()
-    
-    
+
     self.applyButton = qt.QPushButton("Apply")
     self.applyButton.objectName = self.__class__.__name__ + 'Apply'
     self.applyButton.setToolTip(self.tr("Fill selected segment in regions that are in the specified intensity range."))
@@ -394,22 +373,12 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     self.useForPaintButton.connect('clicked()', self.onUseForPaint)
     self.thresholdSlider.connect('valuesChanged(double,double)', self.onThresholdValuesChanged)
-    self.thresholdSlider1.connect('valuesChanged(double,double)', self.onThresholdValuesChanged1)
     self.autoThresholdMethodSelectorComboBox.connect("activated(int)", self.onSelectedAutoThresholdMethod)
     self.autoThresholdModeSelectorComboBox.connect("activated(int)", self.onSelectedAutoThresholdMethod)
     self.selectPreviousAutoThresholdButton.connect('clicked()', self.onSelectPreviousAutoThresholdMethod)
     self.selectNextAutoThresholdButton.connect('clicked()', self.onSelectNextAutoThresholdMethod)
     self.setAutoThresholdButton.connect('clicked()', self.onAutoThreshold)
     self.applyButton.connect('clicked()', self.onApply)
-
-
-    # add
-    self.thresholdSlider1.setRange(0, 1000)
-    self.thresholdSlider1.minimumValue = 10
-    self.thresholdSlider1.maximumValue = 200
-    
-    self.maxvalue = 200
-    self.minvalue = 10
 
   def createCursor(self, widget):
     # Turn off effect-specific cursor for this effect
@@ -419,25 +388,15 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     # Set scalar range of master volume image data to threshold slider
     import vtkSegmentationCorePython as vtkSegmentationCore
     masterImageData = self.scriptedEffect.masterVolumeImageData()
-    
     if masterImageData:
       lo, hi = masterImageData.GetScalarRange()
-      # print("lo")
-      # print(lo)
-      # print(hi)
-      if lo < -10000:
-        lo = -10000
-      if hi > 20000:
-        hi = 20000  
-      lo = lo / 10
-      hi = hi / 10  
       self.thresholdSlider.setRange(lo, hi)
       self.thresholdSlider.singleStep = (hi - lo) / 1000.
       if (self.scriptedEffect.doubleParameter("MinimumThreshold") == self.scriptedEffect.doubleParameter("MaximumThreshold")):
         # has not been initialized yet
-        self.scriptedEffect.setParameter("MinimumThreshold", (lo+(hi-lo)*0.25) * 10)
-        self.scriptedEffect.setParameter("MaximumThreshold", hi * 10)
-    # self.thresholdSlider1.setRange(0,10000)
+        self.scriptedEffect.setParameter("MinimumThreshold", lo+(hi-lo)*0.25)
+        self.scriptedEffect.setParameter("MaximumThreshold", hi)
+
   def layoutChanged(self):
     self.setupPreviewDisplay()
 
@@ -452,8 +411,8 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
   def updateGUIFromMRML(self):
     self.thresholdSlider.blockSignals(True)
-    self.thresholdSlider.setMinimumValue(self.scriptedEffect.doubleParameter("MinimumThreshold") / 10)
-    self.thresholdSlider.setMaximumValue(self.scriptedEffect.doubleParameter("MaximumThreshold") / 10)
+    self.thresholdSlider.setMinimumValue(self.scriptedEffect.doubleParameter("MinimumThreshold"))
+    self.thresholdSlider.setMaximumValue(self.scriptedEffect.doubleParameter("MaximumThreshold"))
     self.thresholdSlider.blockSignals(False)
 
     autoThresholdMethod = self.autoThresholdMethodSelectorComboBox.findData(self.scriptedEffect.parameter("AutoThresholdMethod"))
@@ -485,19 +444,9 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.updateHistogramBackground()
 
   def updateMRMLFromGUI(self):
-    # add
-    # self.thresholdSlider.minimumValue = 10
-    # self.thresholdSlider.maximumValue = 20000
     with slicer.util.NodeModify(self.scriptedEffect.parameterSetNode()):
-      # add
-      # self.thresholdSlider.minimumValue = -500
-      # self.thresholdSlider.maximumValue = 100
-      # if self.thresholdSlider.minimumValue < 10:
-      #    self.thresholdSlider.minimumValue = 100
-      # if self.thresholdSlider.maximumValue > 20000:
-      #    self.thresholdSlider.maximumValue = 20000
-      self.scriptedEffect.setParameter("MinimumThreshold", (self.thresholdSlider.minimumValue) * 10)
-      self.scriptedEffect.setParameter("MaximumThreshold", self.thresholdSlider.maximumValue * 10)
+      self.scriptedEffect.setParameter("MinimumThreshold", self.thresholdSlider.minimumValue)
+      self.scriptedEffect.setParameter("MaximumThreshold", self.thresholdSlider.maximumValue)
 
       methodIndex = self.autoThresholdMethodSelectorComboBox.currentIndex
       autoThresholdMethod = self.autoThresholdMethodSelectorComboBox.itemData(methodIndex)
@@ -553,275 +502,14 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
   #
   def onThresholdValuesChanged(self,min,max):
     self.scriptedEffect.updateMRMLFromGUI()
-  def onThresholdValuesChanged1(self,min,max):
-    self.minvalue = min
-    self.maxvalue = max
+
   def onUseForPaint(self):
-    minimumSize = int(self.minvalue) * 1000      
-    maximumSize = int(self.maxvalue) * 1000
-    
-    self.scriptedEffect.parameterSetNode().SetOverwriteMode(slicer.vtkMRMLSegmentEditorNode.OverwriteNone)
-    
-    # self.splitSegments(minimumSize = minimumSize, split = False)
-    selectedSegmentID = self.scriptedEffect.parameterSetNode().GetSelectedSegmentID()
-    segmentationNode = self.scriptedEffect.parameterSetNode().GetSegmentationNode()
-    air_segment_id = selectedSegmentID
-    
-    segmentation = segmentationNode.GetSegmentation()
-    segmentEditorWidget = slicer.modules.segmenteditor.widgetRepresentation().self().editor
-    segmentEditorWidget.setActiveEffectByName("Logical operators")
-    print(minimumSize)
-    
-    segment_id1 = segmentation.AddEmptySegment()
-    segmentEditorWidget.setCurrentSegmentID(segment_id1)
-    effect = segmentEditorWidget.activeEffect()
-    effect.setParameter("Operation", "COPY")
-    effect.setParameter("ModifierSegmentID", air_segment_id)
-    effect.self().onApply()
-    segmentEditorWidget.setActiveEffectByName("Islands")
-    effect = segmentEditorWidget.activeEffect()
-    effect.setParameter("Operation","REMOVE_SMALL_ISLANDS")
-    effect.setParameter("MinimumSize", minimumSize)
-    effect.setParameter("MaxNumberOfSegments", 1000)
-    effect.setParameter("Split", False)
-    effect.self().onApply()
-    print(maximumSize)
+    parameterSetNode = self.scriptedEffect.parameterSetNode()
+    parameterSetNode.MasterVolumeIntensityMaskOn()
+    parameterSetNode.SetMasterVolumeIntensityMaskRange(self.thresholdSlider.minimumValue, self.thresholdSlider.maximumValue)
+    # Switch to paint effect
+    self.scriptedEffect.selectEffect("Paint")
 
-    segment_id2 = segmentation.AddEmptySegment()
-    segmentEditorWidget.setCurrentSegmentID(segment_id2)
-    segmentEditorWidget.setActiveEffectByName("Logical operators")
-    effect = segmentEditorWidget.activeEffect()
-    effect.setParameter("Operation", "COPY")
-    effect.setParameter("ModifierSegmentID", air_segment_id)
-    effect.self().onApply()
-    segmentEditorWidget.setActiveEffectByName("Islands")
-    effect = segmentEditorWidget.activeEffect()
-    effect.setParameter("Operation","REMOVE_SMALL_ISLANDS")
-    effect.setParameter("MinimumSize", maximumSize)
-    effect.setParameter("MaxNumberOfSegments", 1000)
-    effect.setParameter("Split", False)
-    effect.self().onApply()
-    
-
-    result_id  = segmentation.AddEmptySegment()
-    segmentEditorWidget.setCurrentSegmentID(result_id)
-    segmentEditorWidget.setActiveEffectByName('Logical operators')
-    effect = segmentEditorWidget.activeEffect()
-    effect.setParameter("Operation", "COPY")
-    effect.setParameter("ModifierSegmentID", segment_id1)
-    effect.self().onApply()
-    effect.setParameter("Operation", "SUBTRACT")
-    effect.setParameter("ModifierSegmentID", segment_id2) 
-    effect.self().onApply()
-    
-
-    # segmentationNode.RemoveSegment(air_segment_id)
-    # segmentationNode.RemoveSegment(segment_id1)
-    # segmentationNode.RemoveSegment(segment_id2)
-
-    # self.scriptedEffect.parameterSetNode().SetOverwriteMode(slicer.vtkMRMLSegmentEditorNode.OverwriteVisibleSegments)
-    # # selectedSegmentID = self.scriptedEffect.parameterSetNode().GetSelectedSegmentID()
-    # segmentationNode = self.scriptedEffect.parameterSetNode().GetSegmentationNode()
-    # # segmentation = segmentationNode.GetSegmentation()
-    # # selectedSegment = segmentation.GetSegment(selectedSegmentID)
-
-    # slicer.util.selectModule('SegmentEditor')
-    # segmentEditorWidget = slicer.modules.segmenteditor.widgetRepresentation().self().editor
-    # segmentEditorWidget.setActiveEffectByName("Logical operators")
-    # effect = segmentEditorWidget.activeEffect()
-    # # segmentationNode = getNode('Segmentation')
-    # segmentation = segmentationNode.GetSegmentation()
-    # air_segment_id = segmentation.GetSegmentIdBySegmentName("AirwaySegment")
-
-    # # air_segment_id = selectedSegmentID
-    # print(air_segment_id)
-    # low_to_max_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(low_to_max_segment_id)
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # segmentEditorWidget.setActiveEffectByName("Islands")
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation","REMOVE_SMALL_ISLANDS")
-    # effect.setParameter("MinimumSize", minimumSize)
-    # effect.self().onApply()
-    # print(low_to_max_segment_id)
-    # # all_id = segmentation.AddEmptySegment()
-    # # segmentEditorWidget.setCurrentSegmentID(all_id)
-    # # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # # effect = segmentEditorWidget.activeEffect()
-    # # effect.setParameter("Operation", "COPY")
-    # # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # # effect.self().onApply()
-
-
-    # high_to_max_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(high_to_max_segment_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # print(high_to_max_segment_id)
-    # segmentEditorWidget.setActiveEffectByName('Islands')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter('Operation','REMOVE_SMALL_ISLANDS')
-    # effect.setParameter('MinimumSize', maximumSize)
-    # effect.self().onApply()
-
-    # all_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(all_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # segmentEditorWidget.setActiveEffectByName('Islands')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter('Operation','REMOVE_SMALL_ISLANDS')
-    # effect.setParameter('MinimumSize', 10)
-    # effect.self().onApply()
-
-    # tmp_high_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(tmp_high_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", high_to_max_segment_id) 
-    # effect.self().onApply()
-
-    # tmp_low_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(tmp_low_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", low_to_max_segment_id) 
-    # effect.self().onApply()
-
-    # result_id  = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(result_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", tmp_high_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", tmp_low_id) 
-    # effect.self().onApply()
-
-    # low_to_high_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(low_to_high_segment_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", low_to_max_segment_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", high_to_max_segment_id) 
-    # effect.self().onApply()
-
-    # result_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(result_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", all_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", low_to_high_segment_id) 
-    # effect.self().onApply()
-
-    # segmentationNode.RemoveSegment(all_id)
-    # segmentationNode.RemoveSegment(tmp_low_id)
-    # segmentationNode.RemoveSegment(tmp_high_id)
-    # segmentationNode.RemoveSegment(high_to_max_segment_id)
-    # segmentationNode.RemoveSegment(low_to_max_segment_id)
-    # segmentationNode.RemoveSegment(air_segment_id)
-
-    # selectedSegment = segmentation.GetSegment(all_id)
-    # selectedSegment.SetColor(0, 1, 0)
-    # slicer.mrmlScene.RemoveNode(segmentationNode)
-
-    
-    #
-    # Switch to segment editor and pick logical effects, and get the segment to work on.
-    #
-    # slicer.util.selectModule('SegmentEditor')
-    # segmentEditorWidget = slicer.modules.segmenteditor.widgetRepresentation().self().editor
-    # segmentEditorWidget.setActiveEffectByName("Logical operators")
-    # effect = segmentEditorWidget.activeEffect()
-    
-    # segmentationNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentationNode")
-    # segmentationNode.CreateDefaultDisplayNodes() # only needed for display
-    # segmentationNode.SetReferenceImageGeometryParameterFromVolumeNode(masterVolumeNode)
-    # segmentation = segmentationNode.GetSegmentation()
-    
-    # air_segment_id = segmentationNode.GetSegmentation().AddEmptySegment("skin")
-
-    # #
-    # # Make a low to max by coping original and removing islands smaller than low.
-    # #
-    # segmentation = segmentationNode.GetSegmentation()
-    # low_to_max_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(low_to_max_segment_id)
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # segmentEditorWidget.setActiveEffectByName('Islands')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter('Operation','REMOVE_SMALL_ISLANDS')
-    # effect.setParameter('MinimumSize', low_island_size)
-    # effect.self().onApply()
-
-    # #
-    # # Make a high to max in the same fashion.
-    # #
-    # high_to_max_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(high_to_max_segment_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", air_segment_id)
-    # effect.self().onApply()
-    # segmentEditorWidget.setActiveEffectByName('Islands')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter('Operation','REMOVE_SMALL_ISLANDS')
-    # effect.setParameter('MinimumSize', high_island_size)
-    # effect.self().onApply()
-
-    # #
-    # # Finally, make a low to high segment bu subtracting high to max from low to max.
-    # #
-    # low_to_high_segment_id = segmentation.AddEmptySegment()
-    # segmentEditorWidget.setCurrentSegmentID(low_to_high_segment_id)
-    # segmentEditorWidget.setActiveEffectByName('Logical operators')
-    # effect = segmentEditorWidget.activeEffect()
-    # effect.setParameter("Operation", "COPY")
-    # effect.setParameter("ModifierSegmentID", low_to_max_segment_id)
-    # effect.self().onApply()
-    # effect.setParameter("Operation", "SUBTRACT")
-    # effect.setParameter("ModifierSegmentID", high_to_max_segment_id) 
-    # effect.self().onApply()
-
-        # parameterSetNode = self.scriptedEffect.parameterSetNode()
-    # parameterSetNode.MasterVolumeIntensityMaskOn()
-    # self.scriptedEffect.setParameter("Operation", "FILL_OUTSIDE")
-    # parameterSetNode.SetMasterVolumeIntensityMaskRange(100, 2000)
-    # masterVolumeNode = self.scriptedEffect.parameterSetNode().GetMasterVolumeNode()
-    # self.scriptedEffect.setParameter("FillValue", str(masterVolumeNode.GetImageData().GetScalarRange()[0]))
-    # # Switch to paint effect
-    # self.scriptedEffect.self().onApply()
-    # segefforts = SegmentEditorLogicalEffect(self)
-    # segefforts.setMRMLDefaults()
-    # segefforts.onApply()
-    # print(segefforts)
   def onSelectPreviousAutoThresholdMethod(self):
     self.autoThresholdMethodSelectorComboBox.currentIndex = (self.autoThresholdMethodSelectorComboBox.currentIndex - 1) \
       % self.autoThresholdMethodSelectorComboBox.count
@@ -836,7 +524,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.updateMRMLFromGUI()
     self.onAutoThreshold()
     self.updateGUIFromMRML()
-    
+
   def onAutoThreshold(self):
     autoThresholdMethod = self.scriptedEffect.parameter("AutoThresholdMethod")
     autoThresholdMode = self.scriptedEffect.parameter("AutoThresholdMode")
@@ -867,9 +555,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
       self.autoThresholdCalculator.SetMethodToTriangle()
     elif autoThresholdMethod == METHOD_YEN:
       self.autoThresholdCalculator.SetMethodToYen()
-    elif autoThresholdMethod == METHOD_CUSTOM:
-      self.autoThresholdCalculator.SetMethodToHuang()
-
     else:
       logging.error("Unknown AutoThresholdMethod {0}".format(autoThresholdMethod))
 
@@ -880,31 +565,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     computedThreshold = self.autoThresholdCalculator.GetThreshold()
 
     masterVolumeMin, masterVolumeMax = masterImageData.GetScalarRange()
-    
-    if autoThresholdMethod == METHOD_CUSTOM:
-      mnri_file_path = os.path.join(ExportDirectorySettings.load(), "NAOMICT_UTF8.mnri")
-      mnri_settings = RFReconstructionLogic.MNRISettings(mnri_file_path)
-      GGOsettingvalue = qt.QSettings()  # File must be next to RFViewer.ini
-      selected_preset = int(mnri_settings.value('Frame/GGOSetting'))
-      print("selected_preset")
-      print(GGOsettingvalue)
-      print('GGOMin'+str(selected_preset))
-      masterVolumeMin1 = float(GGOsettingvalue.value('GGOMin'+str(selected_preset), -80))
-      print(GGOsettingvalue.value('GGOMin1'))
-      masterVolumeMax1 = float(GGOsettingvalue.value('GGOMax'+str(selected_preset), -40))
-      print(masterVolumeMax)
-    # if masterVolumeMin < -100 :
-    #   masterVolumeMin = -100
 
-    computedThreshold = computedThreshold / 10
-    masterVolumeMin = masterVolumeMin / 10
-    masterVolumeMax = masterVolumeMax / 10
-    if autoThresholdMethod == METHOD_CUSTOM:
-      computedThreshold = -10000
-      computedThreshold = masterVolumeMin1 * 10
-
-      masterVolumeMax = masterVolumeMax1 * 10
-      masterVolumeMin = masterVolumeMin1 * 10
     if autoThresholdMode == MODE_SET_UPPER:
       self.scriptedEffect.setParameter("MaximumThreshold", computedThreshold)
     elif autoThresholdMode == MODE_SET_LOWER:
@@ -929,12 +590,10 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
       modifierLabelmap.GetImageToWorldMatrix(originalImageToWorldMatrix)
       # Get parameters
       min = self.scriptedEffect.doubleParameter("MinimumThreshold")
-
       max = self.scriptedEffect.doubleParameter("MaximumThreshold")
 
       self.scriptedEffect.saveStateForUndo()
 
-      
       # Perform thresholding
       thresh = vtk.vtkImageThreshold()
       thresh.SetInputData(masterImageData)
@@ -944,7 +603,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
       thresh.SetOutputScalarType(modifierLabelmap.GetScalarType())
       thresh.Update()
       modifierLabelmap.DeepCopy(thresh.GetOutput())
-
     except IndexError:
       logging.error('apply: Failed to threshold master volume!')
       pass
@@ -954,160 +612,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     # De-select effect
     self.scriptedEffect.selectEffect("")
-    
-    masterVolumeNode = self.scriptedEffect.parameterSetNode().GetMasterVolumeNode()
-    voxelArray = slicer.util.arrayFromVolume(masterVolumeNode)
-    print("volumeArray:")
-    print(voxelArray)
-    voxelMax = np.max(voxelArray) - 1
-    voxelMin = np.min(voxelArray) + 1
-    print(voxelMax)
-    print(voxelMin)
-    # voxelMax = np.maximum(voxelArray)
-    # voxelMin = np.minimum(voxelArray)
-    # print(voxelMax)
-    # print(voxelMin)
-    indices = np.where(voxelArray > voxelMax)
-    numberOfVoxels = len(indices[0])
-    print(numberOfVoxels)
-    indices = np.where(voxelArray < voxelMin)
-    numberOfVoxels = len(indices[0])
-    print(numberOfVoxels)
-
-  def splitSegments(self, minimumSize = 0, maxNumberOfSegments = 0, split = True):
-    """
-    minimumSize: if 0 then it means that all islands are kept, regardless of size
-    maxNumberOfSegments: if 0 then it means that all islands are kept, regardless of how many
-    """
-    # This can be a long operation - indicate it to the user
-    qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
-
-    self.scriptedEffect.saveStateForUndo()
-
-    # Get modifier labelmap
-    selectedSegmentLabelmap = self.scriptedEffect.selectedSegmentLabelmap()
-
-    castIn = vtk.vtkImageCast()
-    castIn.SetInputData(selectedSegmentLabelmap)
-    castIn.SetOutputScalarTypeToUnsignedInt()
-
-    # Identify the islands in the inverted volume and
-    # find the pixel that corresponds to the background
-    # islandMath = vtkITK.vtkITKIslandMath()
-    # islandMath.SetInputConnection(castIn.GetOutputPort())
-    # islandMath.SetFullyConnected(False)
-    # islandMath.SetMinimumSize(minimumSize)
-    # islandMath.SetMaximumSize(maximumSize)
-    # islandMath.Update()
-    # islandCount = islandMath.GetNumberOfIslands()
-    # print(islandCount)
-
-    # islandMath1 = vtkITK.vtkITKIslandMath()
-    # islandMath1.SetInputConnection(castIn.GetOutputPort())
-    # islandMath1.SetFullyConnected(False)
-    # islandMath1.SetMinimumSize(maximumSize)
-    # islandMath1.SetMaximumSize(maximumSize)
-    # islandMath1.Update()
-    # islandCount1 = islandMath1.GetMaximumSize()
-    # print(islandCount1)
-
-    # islandMath = vtkITK.vtkITKIslandMath()
-    # islandMath.SetInputConnection(castIn.GetOutputPort())
-    # islandMath.SetFullyConnected(False)
-    # islandMath.SetMaximumSize(maximumSize)
-    # islandMath.Update()
-    # islandCount = islandMath.GetNumberOfIslands()
-    # print(islandCount)
-
-    islandMath = vtkITK.vtkITKIslandMath()
-    islandMath.SetInputConnection(castIn.GetOutputPort())
-    islandMath.SetFullyConnected(True)
-    islandMath.SetMinimumSize(minimumSize)
-    islandMath.Update()
-    islandCount = islandMath.GetNumberOfIslands()
-    print(islandCount)
-
-    islandImage = slicer.vtkOrientedImageData()
-    islandImage.ShallowCopy(islandMath.GetOutput())
-    selectedSegmentLabelmapImageToWorldMatrix = vtk.vtkMatrix4x4()
-    selectedSegmentLabelmap.GetImageToWorldMatrix(selectedSegmentLabelmapImageToWorldMatrix)
-    islandImage.SetImageToWorldMatrix(selectedSegmentLabelmapImageToWorldMatrix)
-
-    islandCount = islandMath.GetNumberOfIslands()
-    islandOrigCount = islandMath.GetOriginalNumberOfIslands()
-    ignoredIslands = islandOrigCount - islandCount
-    logging.info( "%d islands created (%d ignored)" % (islandCount, ignoredIslands) )
-
-    baseSegmentName = "Label"
-    selectedSegmentID = self.scriptedEffect.parameterSetNode().GetSelectedSegmentID()
-    segmentationNode = self.scriptedEffect.parameterSetNode().GetSegmentationNode()
-    with slicer.util.NodeModify(segmentationNode):
-      segmentation = segmentationNode.GetSegmentation()
-      selectedSegment = segmentation.GetSegment(selectedSegmentID)
-      selectedSegmentName = selectedSegment.GetName()
-      if selectedSegmentName is not None and selectedSegmentName != "":
-        baseSegmentName = selectedSegmentName
-
-      labelValues = vtk.vtkIntArray();
-      slicer.vtkSlicerSegmentationsModuleLogic.GetAllLabelValues(labelValues, islandImage);
-
-      # Erase segment from in original labelmap.
-      # Individuall islands will be added back later.
-      threshold = vtk.vtkImageThreshold()
-      threshold.SetInputData(selectedSegmentLabelmap)
-      threshold.ThresholdBetween(0, 0)
-      threshold.SetInValue(0)
-      threshold.SetOutValue(0)
-      threshold.Update()
-      emptyLabelmap = slicer.vtkOrientedImageData()
-      emptyLabelmap.ShallowCopy(threshold.GetOutput())
-      emptyLabelmap.CopyDirections(selectedSegmentLabelmap)
-      self.scriptedEffect.modifySegmentByLabelmap(segmentationNode, selectedSegmentID, emptyLabelmap,
-        slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeSet)
-
-      for i in range(labelValues.GetNumberOfTuples()):
-        if (maxNumberOfSegments > 0 and i >= maxNumberOfSegments):
-          # We only care about the segments up to maxNumberOfSegments.
-          # If we do not want to split segments, we only care about the first.
-          break
-
-        labelValue = int(labelValues.GetTuple1(i))
-        segment = selectedSegment
-        segmentID = selectedSegmentID
-        # if i != 0 and split:
-        #   segment = slicer.vtkSegment()
-        #   name = baseSegmentName + "_" + str(i+1)
-        #   segment.SetName(name)
-        #   segment.AddRepresentation(slicer.vtkSegmentationConverter.GetSegmentationBinaryLabelmapRepresentationName(),
-        #     selectedSegment.GetRepresentation(slicer.vtkSegmentationConverter.GetSegmentationBinaryLabelmapRepresentationName()));
-        #   segmentation.AddSegment(segment)
-        #   segmentID = segmentation.GetSegmentIdBySegment(segment)
-        #   segment.SetLabelValue(segmentation.GetUniqueLabelValueForSharedLabelmap(selectedSegmentID))
-
-        threshold = vtk.vtkImageThreshold()
-        threshold.SetInputData(islandMath.GetOutput())
-        threshold.ThresholdBetween(labelValue, labelValue)
-        threshold.SetInValue(1)
-        threshold.SetOutValue(0)
-        threshold.Update()
-        print(threshold)
-        modificationMode = slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeAdd
-        if i == 0:
-          modificationMode = slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeSet
-
-        # Create oriented image data from output
-        modifierImage = slicer.vtkOrientedImageData()
-        modifierImage.DeepCopy(threshold.GetOutput())
-        selectedSegmentLabelmapImageToWorldMatrix = vtk.vtkMatrix4x4()
-        selectedSegmentLabelmap.GetImageToWorldMatrix(selectedSegmentLabelmapImageToWorldMatrix)
-        modifierImage.SetGeometryFromImageToWorldMatrix(selectedSegmentLabelmapImageToWorldMatrix)
-        # We could use a single slicer.vtkSlicerSegmentationsModuleLogic.ImportLabelmapToSegmentationNode
-        # method call to import all the resulting segments at once but that would put all the imported segments
-        # in a new layer. By using modifySegmentByLabelmap, the number of layers will not increase.
-        self.scriptedEffect.modifySegmentByLabelmap(segmentationNode, segmentID, modifierImage, modificationMode)
-
-    qt.QApplication.restoreOverrideCursor()
-
 
   def clearPreviewDisplay(self):
     for sliceWidget, pipeline in self.previewPipelines.items():
@@ -1714,7 +1218,7 @@ METHOD_RENYI_ENTROPY = 'RENYI_ENTROPY'
 METHOD_SHANBHAG = 'SHANBHAG'
 METHOD_TRIANGLE = 'TRIANGLE'
 METHOD_YEN = 'YEN'
-METHOD_CUSTOM = 'CUSTOM'
+
 MODE_SET_UPPER = 'SET_UPPER'
 MODE_SET_LOWER = 'SET_LOWER'
 MODE_SET_MIN_UPPER = 'SET_MIN_UPPER'
