@@ -42,10 +42,32 @@ class RFVisualizationUI(qt.QWidget):
     self._volumeSelector.setCurrentNode(volumeNode)
 
     # Create ROI for the current display node if it doesn't exist (avoids crop volume logic crash)
-    if not displayNode3D.GetROINodeID():
+    roi_node = displayNode3D.GetROINode()
+    if not roi_node:
       roi_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLAnnotationROINode")
       roi_node.SetInteractiveMode(1)
       displayNode3D.SetAndObserveROINodeID(roi_node.GetID())
+
+    transform_node = roi_node.GetParentTransformNode()
+    if not transform_node:
+      transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+      transform_display_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformDisplayNode")
+      # transform_display_node.SetEditorVisibility(True)
+      transform_display_node.SetEditorTranslationEnabled(True)
+      transform_display_node.SetEditorRotationEnabled(True)
+      transform_display_node.SetEditorScalingEnabled(True)
+
+      # 不要.
+      # transform_display_node.SetVisibility(True)
+      # transform_display_node.SetVisibility2D(True)
+      # transform_display_node.SetVisibility3D(True)
+      transform_node.SetAndObserveDisplayNodeID(transform_display_node.GetID())
+
+      #不要かも
+      slicer.mrmlScene.AddNode(transform_node)
+
+      roi_node.SetAndObserveTransformNodeID(transform_node.GetID())
+      transform_display_node.UpdateEditorBounds()
 
     # Deactivate checkboxes (and toggle them) to make sure the parameter is correctly applied
     # When loading a session, if the checkbox status are not toggled, the correct check status may be selected but not
@@ -56,6 +78,7 @@ class RFVisualizationUI(qt.QWidget):
 
     # Fit Volume ROI to volume (by default ROI is 0)
     if not isLoadingState:
+      #これでROI初期化実現している
       self._fitToVolumeButton.click()
 
     # Set window level and scalar mapping widgets input nodes
@@ -70,6 +93,7 @@ class RFVisualizationUI(qt.QWidget):
     self.layoutSection.addRow(self.tr("Layout: "), self.layoutSelector)
     self._layout.addRow(self.layoutSection)
 
+#ここでUICropBoxのUI作っている
   def addCropSection(self):
     self._volumeRenderingWidget = slicer.util.getNewModuleGui(slicer.modules.volumerendering)
     self._volumeSelector = slicer.util.findChild(self._volumeRenderingWidget, "VolumeNodeComboBox")
@@ -86,7 +110,11 @@ class RFVisualizationUI(qt.QWidget):
     layout = qt.QHBoxLayout()
     # layout.addWidget(qt.QLabel(self.tr("Crop:")))
     # layout.addWidget(self._cropCheckBox)
+
+    #ClipBoxの表示ボタン
     layout.addWidget(self._displayROICheckBox)
+
+    #ClipBoxの初期化ボタン 
     layout.addWidget(self._fitToVolumeButton)
 
     self._layout.addRow(layout)
