@@ -383,7 +383,7 @@ class RFVisualizationWidget(RFViewerWidget):
       return
 
     checkVal = self.ui.displayROICheckBox.checked
-    # 有効化の順序が重要。transform -> roiとすれば、重畳したNodeに対するUI上での操作対象がtransformが有線される
+    # 有効化の順序が重要。transform -> roiとすれば、重畳したNodeに対するUI上での操作は先に登録された順となるのでtransformにて通知が飛ぶ。
     self.ui.transform_display_node.SetEditorVisibility(checkVal)
     ROICropDisplayCheckVBox = slicer.util.findChild(self.ui.volumeRenderingWidget, "ROICropDisplayCheckBox")
     ROICropDisplayCheckVBox.setChecked(checkVal)

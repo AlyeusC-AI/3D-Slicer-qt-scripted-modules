@@ -199,9 +199,6 @@ class RFVisualizationUI(qt.QWidget):
     identity_matrix = vtk.vtkMatrix4x4()
     self._transform_node.SetMatrixTransformToParent(identity_matrix)
 
-    #ROIをVolumeに合わせようとしても無駄.transformで変形しているため.
-    # self._ROIFitPushButton.click()
-    # self.transform_display_node.UpdateEditorBounds()
   def setMIPThickness2Button(self):
     thickness = 2
     self.slabThicknessSlider.setValue(thickness)
