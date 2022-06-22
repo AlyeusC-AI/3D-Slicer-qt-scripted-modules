@@ -379,9 +379,6 @@ class RFVisualizationWidget(RFViewerWidget):
       print("ray sum")
 
   def onROIDisplayed(self):
-    if self._isLoadingState:
-      return
-
     checkVal = self.ui.displayROICheckBox.checked
     # 有効化の順序が重要。transform -> roiとすれば、重畳したNodeに対するUI上での操作は先に登録された順となるのでtransformにて通知が飛ぶ。
     self.ui.transform_display_node.SetEditorVisibility(checkVal)
