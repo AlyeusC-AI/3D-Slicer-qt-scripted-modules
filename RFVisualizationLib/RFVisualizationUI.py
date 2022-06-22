@@ -96,11 +96,9 @@ class RFVisualizationUI(qt.QWidget):
     self._cropCheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropCheckBox")
     self._cropCheckBox.text = self.tr("Enabled")
 
-    # self._displayROICheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropDisplayCheckBox")
     self.displayROICheckBox = qt.QCheckBox()
     self.displayROICheckBox.text = self.tr("Display ROI")
 
-    # self._fitToVolumeButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
     self._ROIFitPushButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
     self._fitToVolumeButton = createButton(self.tr("Fit to Volume"), self.fitToVolumeButton)
 
@@ -108,10 +106,10 @@ class RFVisualizationUI(qt.QWidget):
     # layout.addWidget(qt.QLabel(self.tr("Crop:")))
     # layout.addWidget(self._cropCheckBox)
 
-    #ClipBoxの表示ボタン
+    #「クリッピングを表示する」チェックボックス
     layout.addWidget(self.displayROICheckBox)
 
-    #ClipBoxの初期化ボタン 
+    #「初期値に戻す」ボタン
     layout.addWidget(self._fitToVolumeButton)
 
     self._layout.addRow(layout)
