@@ -48,38 +48,33 @@ class RFVisualizationUI(qt.QWidget):
       roi_node.SetInteractiveMode(1)
       displayNode3D.SetAndObserveROINodeID(roi_node.GetID())
 
-    transform_node = roi_node.GetParentTransformNode()
-    if not transform_node:
-      transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
-      transform_display_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformDisplayNode")
-      # transform_display_node.SetEditorVisibility(True)
-      transform_display_node.SetEditorTranslationEnabled(True)
-      transform_display_node.SetEditorRotationEnabled(True)
-      transform_display_node.SetEditorScalingEnabled(True)
-
-      # 不要.
-      # transform_display_node.SetVisibility(True)
-      # transform_display_node.SetVisibility2D(True)
-      # transform_display_node.SetVisibility3D(True)
-      transform_node.SetAndObserveDisplayNodeID(transform_display_node.GetID())
+    self._transform_node = roi_node.GetParentTransformNode()
+    if not self._transform_node:
+      self._transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+      self.transform_display_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformDisplayNode")
+      self.transform_display_node.SetEditorTranslationEnabled(True)
+      self.transform_display_node.SetEditorRotationEnabled(True)
+      self.transform_display_node.SetEditorScalingEnabled(True)
+      self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
 
       #不要かも
-      slicer.mrmlScene.AddNode(transform_node)
+      slicer.mrmlScene.AddNode(self._transform_node)
 
-      roi_node.SetAndObserveTransformNodeID(transform_node.GetID())
-      transform_display_node.UpdateEditorBounds()
+      roi_node.SetAndObserveTransformNodeID(self._transform_node.GetID())
+      self.transform_display_node.UpdateEditorBounds()
 
     # Deactivate checkboxes (and toggle them) to make sure the parameter is correctly applied
     # When loading a session, if the checkbox status are not toggled, the correct check status may be selected but not
     # propagated to the volume
-    for checkBox in [self._cropCheckBox, self._displayROICheckBox, self.displayResliceCursorCheckbox,
+    for checkBox in [self._cropCheckBox, self.displayROICheckBox, self.displayResliceCursorCheckbox,
                      self.synchronizeCheckbox]:
       toggleCheckBox(checkBox, lastCheckedState=False)
 
     # Fit Volume ROI to volume (by default ROI is 0)
     if not isLoadingState:
       #これでROI初期化実現している
-      self._fitToVolumeButton.click()
+      self._ROIFitPushButton.click()
+      self.transform_display_node.UpdateEditorBounds()
 
     # Set window level and scalar mapping widgets input nodes
     self.windowLevelWidget.setMRMLVolumeNode(volumeNode)
@@ -95,24 +90,26 @@ class RFVisualizationUI(qt.QWidget):
 
 #ここでUICropBoxのUI作っている
   def addCropSection(self):
-    self._volumeRenderingWidget = slicer.util.getNewModuleGui(slicer.modules.volumerendering)
-    self._volumeSelector = slicer.util.findChild(self._volumeRenderingWidget, "VolumeNodeComboBox")
+    self.volumeRenderingWidget = slicer.util.getNewModuleGui(slicer.modules.volumerendering)
+    self._volumeSelector = slicer.util.findChild(self.volumeRenderingWidget, "VolumeNodeComboBox")
 
-    self._cropCheckBox = slicer.util.findChild(self._volumeRenderingWidget, "ROICropCheckBox")
+    self._cropCheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropCheckBox")
     self._cropCheckBox.text = self.tr("Enabled")
 
-    self._displayROICheckBox = slicer.util.findChild(self._volumeRenderingWidget, "ROICropDisplayCheckBox")
-    self._displayROICheckBox.text = self.tr("Display ROI")
+    # self._displayROICheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropDisplayCheckBox")
+    self.displayROICheckBox = qt.QCheckBox()
+    self.displayROICheckBox.text = self.tr("Display ROI")
 
-    self._fitToVolumeButton = slicer.util.findChild(self._volumeRenderingWidget, "ROIFitPushButton")
-    self._fitToVolumeButton.text = self.tr("Fit to Volume")
+    # self._fitToVolumeButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
+    self._ROIFitPushButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
+    self._fitToVolumeButton = createButton(self.tr("Fit to Volume"), self.fitToVolumeButton)
 
     layout = qt.QHBoxLayout()
     # layout.addWidget(qt.QLabel(self.tr("Crop:")))
     # layout.addWidget(self._cropCheckBox)
 
     #ClipBoxの表示ボタン
-    layout.addWidget(self._displayROICheckBox)
+    layout.addWidget(self.displayROICheckBox)
 
     #ClipBoxの初期化ボタン 
     layout.addWidget(self._fitToVolumeButton)
@@ -197,6 +194,14 @@ class RFVisualizationUI(qt.QWidget):
       slice.SetMipThickness(thickness)
       slice.Modified()
 
+  def fitToVolumeButton(self):
+    # 変形は全てtransformで実施。ROIはtransformされるだけなのでtransformを初期化すればOK。
+    identity_matrix = vtk.vtkMatrix4x4()
+    self._transform_node.SetMatrixTransformToParent(identity_matrix)
+
+    #ROIをVolumeに合わせようとしても無駄.transformで変形しているため.
+    # self._ROIFitPushButton.click()
+    # self.transform_display_node.UpdateEditorBounds()
   def setMIPThickness2Button(self):
     thickness = 2
     self.slabThicknessSlider.setValue(thickness)

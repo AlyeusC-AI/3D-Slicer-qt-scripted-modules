@@ -150,6 +150,7 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.displayResliceCursorCheckbox.connect("stateChanged(int)", self.onResliceCursorDisplayed)
     self.ui.slabThicknessSlider.connect("valueChanged(int)", self.onSlabThicknessSliderChanged)
     self.ui.thicknessSelector.connect("currentIndexChanged(int)", self.onMIPThicknessChanged)
+    self.ui.displayROICheckBox.connect("stateChanged(int)", self.onROIDisplayed)
     # self.ui.raycastSelector.connect("currentIndexChanged(int)", self.onRaycastChanged)
 
     # Add vertical spacer
@@ -377,6 +378,15 @@ class RFVisualizationWidget(RFViewerWidget):
       sliceNode.Modified()
       print("ray sum")
 
+  def onROIDisplayed(self):
+    if self._isLoadingState:
+      return
+
+    checkVal = self.ui.displayROICheckBox.checked
+    # 有効化の順序が重要。transform -> roiとすれば、重畳したNodeに対するUI上での操作対象がtransformが有線される
+    self.ui.transform_display_node.SetEditorVisibility(checkVal)
+    ROICropDisplayCheckVBox = slicer.util.findChild(self.ui.volumeRenderingWidget, "ROICropDisplayCheckBox")
+    ROICropDisplayCheckVBox.setChecked(checkVal)
 
   def onResliceCursorDisplayed(self):
     if self._isLoadingState:
