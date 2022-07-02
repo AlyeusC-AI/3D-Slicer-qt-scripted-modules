@@ -48,20 +48,21 @@ class RFVisualizationUI(qt.QWidget):
       roi_node.SetInteractiveMode(1)
       displayNode3D.SetAndObserveROINodeID(roi_node.GetID())
 
-    self._transform_node = roi_node.GetParentTransformNode()
-    if not self._transform_node:
+    transform_node_id = roi_node.GetTransformNodeID()
+    if transform_node_id:
+      self._transform_node = slicer.mrmlScene.GetNodeByID(roi_node.GetTransformNodeID())
+      self.transform_display_node = slicer.mrmlScene.GetNodeByID(self._transform_node.GetDisplayNodeID())
+      self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
+      roi_node.SetAndObserveTransformNodeID(transform_node_id)
+    else:
       self._transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
       self.transform_display_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformDisplayNode")
       self.transform_display_node.SetEditorTranslationEnabled(True)
       self.transform_display_node.SetEditorRotationEnabled(True)
       self.transform_display_node.SetEditorScalingEnabled(True)
       self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
-
-      #不要かも
-      slicer.mrmlScene.AddNode(self._transform_node)
-
       roi_node.SetAndObserveTransformNodeID(self._transform_node.GetID())
-      self.transform_display_node.UpdateEditorBounds()
+    self.transform_display_node.UpdateEditorBounds()
 
     # Deactivate checkboxes (and toggle them) to make sure the parameter is correctly applied
     # When loading a session, if the checkbox status are not toggled, the correct check status may be selected but not
