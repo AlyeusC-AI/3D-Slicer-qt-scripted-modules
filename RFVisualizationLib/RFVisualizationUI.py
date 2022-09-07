@@ -37,9 +37,20 @@ class RFVisualizationUI(qt.QWidget):
 
     self.setLayout(self._layout)
 
+    self.customMouseAction3D()
+    self.customMouseAction2D()
+
   def setVolumeNode(self, volumeNode, displayNode3D, isLoadingState):
     # Select volume in VolumeRenderingWidget selector for volume cropping and deactivate previous cropping settings
     self._volumeSelector.setCurrentNode(volumeNode)
+
+    # Create TransformNode & vtkTransform for rotating VolumeNode.
+    vol_rotate_transform_node_id = volumeNode.GetTransformNodeID()
+    if not vol_rotate_transform_node_id:
+      vol_rotate_transform_node_id = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+      translate = vtk.vtkTransform()
+      vol_rotate_transform_node_id.SetAndObserveTransformToParent(translate)
+      volumeNode.SetAndObserveTransformNodeID(vol_rotate_transform_node_id.GetID())
 
     # Create ROI for the current display node if it doesn't exist (avoids crop volume logic crash)
     roi_node = displayNode3D.GetROINode()
@@ -48,12 +59,12 @@ class RFVisualizationUI(qt.QWidget):
       roi_node.SetInteractiveMode(1)
       displayNode3D.SetAndObserveROINodeID(roi_node.GetID())
 
-    transform_node_id = roi_node.GetTransformNodeID()
-    if transform_node_id:
+    roi_transform_node_id = roi_node.GetTransformNodeID()
+    if roi_transform_node_id:
       self._transform_node = slicer.mrmlScene.GetNodeByID(roi_node.GetTransformNodeID())
       self.transform_display_node = slicer.mrmlScene.GetNodeByID(self._transform_node.GetDisplayNodeID())
       self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
-      roi_node.SetAndObserveTransformNodeID(transform_node_id)
+      roi_node.SetAndObserveTransformNodeID(roi_transform_node_id)
     else:
       self._transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
       self.transform_display_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformDisplayNode")
@@ -62,6 +73,7 @@ class RFVisualizationUI(qt.QWidget):
       self.transform_display_node.SetEditorScalingEnabled(True)
       self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
       roi_node.SetAndObserveTransformNodeID(self._transform_node.GetID())
+
     self.transform_display_node.UpdateEditorBounds()
 
     # Deactivate checkboxes (and toggle them) to make sure the parameter is correctly applied
@@ -519,3 +531,38 @@ class RFVisualizationUI(qt.QWidget):
     selector.addItem(self.tr("Ray Sum"), 3)
     selector.setCurrentText(self.tr("Ray Mean"))
     return selector
+
+  def customMouseAction3D(self):
+    threeDViewWidget = slicer.app.layoutManager().threeDWidget(0)
+    cameraDisplayableManager = threeDViewWidget.threeDView().displayableManagerByClassName("vtkMRMLCameraDisplayableManager")
+    cameraWidget = cameraDisplayableManager.GetCameraWidget()
+
+    #Remove Button Action
+    # Right 
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Left
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Middle
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Mouse Wheel
+    cameraWidget.SetEventTranslation(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MouseWheelForwardEvent, vtk.vtkEvent.NoModifier, vtk.vtkWidgetEvent.NoEvent)
+    cameraWidget.SetEventTranslation(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MouseWheelBackwardEvent, vtk.vtkEvent.NoModifier, vtk.vtkWidgetEvent.NoEvent)
+
+    # Set New Button Action
+    # Left
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateTranslate, cameraWidget.WidgetEventTranslateStart, cameraWidget.WidgetEventTranslateEnd)
+    # Right 
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, cameraWidget.WidgetEventRotateStart, cameraWidget.WidgetEventRotateEnd)
+    # Middle
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, cameraWidget.WidgetEventScaleStart, cameraWidget.WidgetEventScaleEnd)
+
+  def customMouseAction2D(self):
+    lm = slicer.app.layoutManager()
+    for sliceViewName in lm.sliceViewNames():
+      sliceViewWidget = slicer.app.layoutManager().sliceWidget(sliceViewName)
+      displayableManager = sliceViewWidget.sliceView().displayableManagerByClassName("vtkMRMLCrosshairDisplayableManager")
+      w = displayableManager.GetSliceIntersectionWidget()
+
+      #  # Set New Button Action 
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateMPR, w.WidgetEventMPRStart, w.WidgetEventMPREnd)
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, w.WidgetEventZoomSliceStart, w.WidgetEventZoomSliceEnd)

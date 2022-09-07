@@ -384,6 +384,8 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.transform_display_node.SetEditorVisibility(checkVal)
     ROICropDisplayCheckVBox = slicer.util.findChild(self.ui.volumeRenderingWidget, "ROICropDisplayCheckBox")
     ROICropDisplayCheckVBox.setChecked(checkVal)
+    if checkVal:
+      ROICropDisplayCheckVBox.setChecked(False)
 
   def onResliceCursorDisplayed(self):
     if self._isLoadingState:
