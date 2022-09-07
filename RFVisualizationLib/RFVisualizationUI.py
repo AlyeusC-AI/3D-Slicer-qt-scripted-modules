@@ -47,10 +47,11 @@ class RFVisualizationUI(qt.QWidget):
     # Create TransformNode & vtkTransform for rotating VolumeNode.
     vol_rotate_transform_node_id = volumeNode.GetTransformNodeID()
     if not vol_rotate_transform_node_id:
-      vol_rotate_transform_node_id = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+      vol_rotate_transform_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+      vol_rotate_transform_node_id = vol_rotate_transform_node.GetID()
       translate = vtk.vtkTransform()
-      vol_rotate_transform_node_id.SetAndObserveTransformToParent(translate)
-      volumeNode.SetAndObserveTransformNodeID(vol_rotate_transform_node_id.GetID())
+      vol_rotate_transform_node.SetAndObserveTransformToParent(translate)
+      volumeNode.SetAndObserveTransformNodeID(vol_rotate_transform_node_id)
 
     # Create ROI for the current display node if it doesn't exist (avoids crop volume logic crash)
     roi_node = displayNode3D.GetROINode()
@@ -74,6 +75,7 @@ class RFVisualizationUI(qt.QWidget):
       self._transform_node.SetAndObserveDisplayNodeID(self.transform_display_node.GetID())
       roi_node.SetAndObserveTransformNodeID(self._transform_node.GetID())
 
+    self._transform_node.SetAndObserveTransformNodeID(vol_rotate_transform_node_id)
     self.transform_display_node.UpdateEditorBounds()
 
     # Deactivate checkboxes (and toggle them) to make sure the parameter is correctly applied
