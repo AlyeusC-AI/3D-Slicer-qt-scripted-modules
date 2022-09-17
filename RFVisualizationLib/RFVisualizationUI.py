@@ -557,7 +557,7 @@ class RFVisualizationUI(qt.QWidget):
     cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, cameraWidget.WidgetEventRotateStart, cameraWidget.WidgetEventRotateEnd)
     # Middle
     cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, cameraWidget.WidgetEventScaleStart, cameraWidget.WidgetEventScaleEnd)
-
+ 
   def customMouseAction2D(self):
     lm = slicer.app.layoutManager()
     for sliceViewName in lm.sliceViewNames():
@@ -565,6 +565,9 @@ class RFVisualizationUI(qt.QWidget):
       displayableManager = sliceViewWidget.sliceView().displayableManagerByClassName("vtkMRMLCrosshairDisplayableManager")
       w = displayableManager.GetSliceIntersectionWidget()
 
-      #  # Set New Button Action 
+      #Remove Button Action
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+
+      # Set New Button Action 
       w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateMPR, w.WidgetEventMPRStart, w.WidgetEventMPREnd)
       w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, w.WidgetEventZoomSliceStart, w.WidgetEventZoomSliceEnd)
