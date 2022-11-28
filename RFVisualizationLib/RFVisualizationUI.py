@@ -32,7 +32,7 @@ class RFVisualizationUI(qt.QWidget):
     self.add3DSection(vrLogic, preset)
     self.addIntermediateSection()
     self.add2DSection()
-    # self.addMagnificationSection()
+    self.addMagnificationSection()
     self.addAdvancedSection()
 
     self.setLayout(self._layout)
@@ -145,14 +145,16 @@ class RFVisualizationUI(qt.QWidget):
     layoutMIP.addRow( self.slabThicknessSlider)
 
     layout3Buttons = qt.QHBoxLayout()
-    layout3Buttons.setSpacing(20)
-    self.setMIPThick2Button = createButton(self.tr("2"), self.setMIPThickness2Button)
-    layout3Buttons.addWidget(self.setMIPThick2Button)
+    layout3Buttons.setSpacing(5)#####
+    #20220804_Koyanagi
+    #self.setMIPThick2Button = createButton(self.tr("2"), self.setMIPThickness2Button)
+    #layout3Buttons.addWidget(self.setMIPThick2Button)
 
-    self.setMIPThick5Button = createButton(self.tr("5"), self.setMIPThickness5Button)
+    #self.setMIPThick5Button = createButton(self.tr("5"), self.setMIPThickness5Button)
     # layout3Buttons.addWidget(createButton(self.tr("5"), self.setMIPThickness5Button))
-    layout3Buttons.addWidget(self.setMIPThick5Button)
-    layout3Buttons.addWidget(createButton(self.tr("10"), self.setMIPThickness10Button))
+    #layout3Buttons.addWidget(self.setMIPThick5Button)
+    #ayout3Buttons.addWidget(createButton(self.tr("10"), self.setMIPThickness10Button))
+    #20220804_Koyanagi
 
     self.thicknessText = qt.QLabel()
     layout3Buttons.addWidget(self.thicknessText)
@@ -164,15 +166,18 @@ class RFVisualizationUI(qt.QWidget):
     self.layout2D.addRow(self.tr("MIP thickness: "), layoutMIP)
     self._layout.addRow(self.layout2D)
 
+  #--- for cephalometric 20220924 koyanagi --- replacement
   def addMagnificationSection(self):
+  	# Modified for Cephalometric
+    """
     self.layoutMagnification = qt.QFormLayout()
     self.setLayoutSpacing(self.layoutMagnification)
 
     layoutButtons = qt.QHBoxLayout()
     layoutButtons.setSpacing(20);
-    self.cephalometricButton = createButton(self.tr("Cephalometric"), self.setCephalometric)
-    layoutButtons.addWidget(self.cephalometricButton)
-    layoutButtons.addWidget(createButton(self.tr("Size of 1:1"), self.clearCephalometric))
+    # self.cephalometricButton = createButton(self.tr("Cephalometric"), self.setCephalometric)　 ←コメントアウト
+    # layoutButtons.addWidget(self.cephalometricButton)　　　　　　　　　　　　　　　　　　　　　←コメントアウト
+    # layoutButtons.addWidget(createButton(self.tr("Size of 1:1"), self.clearCephalometric))　　 ←コメントアウト
 
     layoutButtons.addWidget(qt.QLabel(self.tr("MIP RayCast: ")))
     self.raycastSelector = self.createRaycastCombobox()
@@ -183,29 +188,91 @@ class RFVisualizationUI(qt.QWidget):
     self.layoutMagnification.addRow(self.tr("Magnification: "), layoutButtons)
 
     self._layout.addRow(self.layoutMagnification)
+    """
+    # Layout of Cephalometric Tools for cephalometric
+    self.layoutMagnification = qt.QFormLayout()
+    self.setLayoutSpacing(self.layoutMagnification)
 
+    #一段目　マーカー・ルーラー・投影設定をレイアウト
+    layoutButtons = qt.QHBoxLayout()
+    layoutButtons.setSpacing(0)
+    
+    #マーカーとルーラーの表示・非表示　テキストを右型にレイアウト　一旦日本語で対応
+    layoutButtons.setSpacing(0)
+    layoutButtons.addWidget(qt.QLabel(self.tr("マーカー")),0,2)#右寄せ
+    self.OrientationMarkerCheckBox = qt.QCheckBox(self.tr(""))
+    self.OrientationMarkerCheckBox.setToolTip(self.tr("マーカーの表示・非表示設定"))
+    layoutButtons.addWidget(self.OrientationMarkerCheckBox)
+    toggleCheckBox(self.OrientationMarkerCheckBox, lastCheckedState=True)
+
+    layoutButtons.addWidget(qt.QLabel(self.tr("ルーラー")),0,2)#右寄せ
+    self.rulerCheckBox = qt.QCheckBox(self.tr(""))
+    self.rulerCheckBox.setToolTip(self.tr("ルーラーの表示・非表示設定"))
+    layoutButtons.addWidget(self.rulerCheckBox)
+    toggleCheckBox(self.rulerCheckBox, lastCheckedState=True)
+
+    #投影方法のコンボボックス　右寄せでレイアウト　一旦日本語で対応
+    layoutButtons.addWidget(qt.QLabel(self.tr("投影方法")),0,2)#右寄せ
+    self.raycastSelector = self.createRaycastCombobox()
+    layoutButtons.addWidget(self.raycastSelector)
+
+    #２段目　セファロ補正値　レイアウト
+    layoutFOV = qt.QHBoxLayout()
+    layoutFOV.setSpacing(0)
+    #セファロ補正値のコンボボックス　右寄せでレイアウト　一旦日本語で対応
+    #layoutFOV.addWidget(qt.QLabel(self.tr("")))#空文字　サイズ合わせ
+
+    #--- for cephalometric & Speed up 20220924 koyanagi --- add
+    #間引き
+    layoutFOV.addWidget(qt.QLabel(self.tr("間引き化")),0,2)#右寄せ
+    self.fractionCheckBox = qt.QCheckBox(self.tr(""))
+    self.fractionCheckBox.setToolTip(self.tr("間引き表示の切り替え"))
+    layoutFOV.addWidget(self.fractionCheckBox)
+    toggleCheckBox(self.fractionCheckBox, lastCheckedState=False)
+    #-------------------------------------------
+    layoutFOV.addWidget(qt.QLabel(self.tr("")))#空文字　サイズ合わせ
+    layoutFOV.addWidget(qt.QLabel(self.tr("セファロ補正値")),1,2)
+    self.FOVSelector = self.createFOVCombobox()
+    layoutFOV.addWidget(self.FOVSelector)
+    
+    #レイアウト
+    self.layoutMagnification.addRow(self.tr("表示・投影設定   "), layoutButtons)
+    self.layoutMagnification.addRow(self.tr(""),layoutFOV)#空文字　サイズ合わせ
+    self._layout.addRow(self.layoutMagnification)
+    
+    #元ソースのなごり　一旦残し
+    self.setMIPThickness5Button()   # default thickness as 5, must be called after raycastSelector initialized
+  #-------------------------------------------
+
+  #--- for cephalometric 20220924 koyanagi --- replacement
   def setMIPThickness(self, thickness):
     self.thicknessText.setText(str(thickness) + " mm")
 
     sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
-    # data = self.raycastSelector.currentData
-    # mode = vtk.VTK_IMAGE_SLAB_MAX
-    # if data == 1:
-    #   mode = vtk.VTK_IMAGE_SLAB_MAX
-    # elif data == 2:
-    #   mode = vtk.VTK_IMAGE_SLAB_MEAN
-    # else:
+    data = self.raycastSelector.currentData
     mode = vtk.VTK_IMAGE_SLAB_MAX
+    if data == 1:
+      mode = vtk.VTK_IMAGE_SLAB_MAX
+    elif data == 2:
+      mode = vtk.VTK_IMAGE_SLAB_MEAN
+    else:
+      mode = vtk.VTK_IMAGE_SLAB_MIN
+    #--- for cephalometric & Speed up 20220924 koyanagi --- add
+    if self.fractionCheckBox.isChecked():
+      Fraction = 5
+    else:
+      Fraction = 1
+    #-------------------------------------------
     for slice in sliceNodes:
       slice.SetSlabMode(mode)
-      # if mode == vtk.VTK_IMAGE_SLAB_MAX:
-      #   slice.SetSlabNumberOfSlices(600)  # not working for thickness slider
-      # else:
-      #   slice.SetSlabNumberOfSlices(10)      
-      slice.SetSlabNumberOfSlices(thickness)
-
-      slice.SetMipThickness(thickness)
+      #--- for cephalometric & Speed up 20220924 koyanagi --- replacement
+      #slice.SetSlabNumberOfSlices(thickness)
+      #slice.SetMipThickness(thickness/Fraction)
+      slice.SetSlabNumberOfSlices(int(thickness/Fraction))
+      slice.SetMipThickness(int(thickness/Fraction))
+      #-------------------------------------------
       slice.Modified()
+  #-------------------------------------------
 
   def fitToVolumeButton(self):
     # 変形は全てtransformで実施。ROIはtransformされるだけなのでtransformを初期化すればOK。
@@ -473,7 +540,7 @@ class RFVisualizationUI(qt.QWidget):
     slider = qt.QSlider()
     slider.singleStep = 1
     slider.pageStep = 5
-    slider.minimum = 0
+    slider.minimum = 1
     slider.maximum = 100
     slider.setOrientation(qt.Qt.Horizontal)
     slider.setValue(1)
@@ -508,6 +575,11 @@ class RFVisualizationUI(qt.QWidget):
     """
     selector = qt.QComboBox()
     selector.setToolTip(self.tr("Select the thickness of MIP (xx mm)"))
+    #20220804_Koyanagi
+    selector.addItem(self.tr("2 mm"), 2)
+    selector.addItem(self.tr("5 mm"), 5)
+    selector.addItem(self.tr("10 mm"), 10)
+    #20220804_Koyanagi
     selector.addItem(self.tr("80 mm"), 80)
     selector.addItem(self.tr("90 mm"), 90)
     selector.addItem(self.tr("100 mm"), 100)
@@ -522,17 +594,35 @@ class RFVisualizationUI(qt.QWidget):
     selector.setCurrentText(self.tr("80 mm"))
     return selector
 
+  #--- for cephalometric 20220924 koyanagi --- replacement
   def createRaycastCombobox(self):
     """
     Create a combobox to choose the thickness of the MIP
     """
     selector = qt.QComboBox()
-    selector.setToolTip(self.tr("Select the Raycast mode"))
+    #selector.setToolTip(self.tr("Select the Raycast mode")) #一旦日本語で対応
+    selector.setToolTip(self.tr("断層画像の投影方法選択\n通常：Ray Max"))
     selector.addItem(self.tr("Ray Max"), 1)
     selector.addItem(self.tr("Ray Mean"), 2)
-    selector.addItem(self.tr("Ray Sum"), 3)
-    selector.setCurrentText(self.tr("Ray Mean"))
+    selector.addItem(self.tr("Ray Min"), 3)
+    selector.setCurrentText(self.tr("Ray Max"))
     return selector
+  #-------------------------------------------
+
+  #--- for cephalometric 20220924 koyanagi --- add
+  def createFOVCombobox(self):
+    # セファロ用の拡大率補正用
+    """
+    Create a combobox to choose the FOV for cephalometric for cephalometric magnification correction
+    """
+    selector = qt.QComboBox()
+    #selector.setToolTip(self.tr("Select the FOV")) #一旦日本語で対応
+    selector.setToolTip(self.tr("セファロ用の補正値選択"))
+    for num in range(100, 400, 5): #レンジは確認後に修正
+      selector.addItem(str(num), num)
+    selector.setCurrentText(self.tr("300"))
+    return selector
+  #-------------------------------------------
 
   def customMouseAction3D(self):
     threeDViewWidget = slicer.app.layoutManager().threeDWidget(0)

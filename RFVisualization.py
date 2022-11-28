@@ -57,6 +57,13 @@ class RFVisualizationWidget(RFViewerWidget):
     self._displayNodeVisibility = {}
     self._roisVisibility = {}
     self._viewVisibility = {}
+    #--- for cephalometric 20220924 koyanagi --- add
+    self._OrientationMarkerVisibility = True
+    self._RulerVisibility = True
+    #-------------------------------------------
+    #--- for cephalometric & Speed up 20220924 koyanagi --- add
+    self._FractionSetting = True
+    #-------------------------------------------
 
   def getVolumeDisplayNode3D(self):
     return self._vrLogic.GetFirstVolumeRenderingDisplayNode(self.volumeNode)
@@ -152,6 +159,21 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.thicknessSelector.connect("currentIndexChanged(int)", self.onMIPThicknessChanged)
     self.ui.displayROICheckBox.connect("stateChanged(int)", self.onROIDisplayed)
     # self.ui.raycastSelector.connect("currentIndexChanged(int)", self.onRaycastChanged)
+    #--- for cephalometric 20220924 koyanagi --- add
+    self.ui.FOVSelector.connect("currentIndexChanged(int)", self.onFOVChanged)#セファロ拡大率補正用コンボボックス
+    self.ui.OrientationMarkerCheckBox.connect("stateChanged(int)", self.onOrientationMarkerChanged)#マーカーキューブの表示・非表示
+    self.ui.rulerCheckBox.connect("stateChanged(int)", self.onRulerChanged)#ルーラーの表示・非表示
+    #-------------------------------------------
+    #--- for cephalometric & Speed up 20220924 koyanagi --- add
+    self.ui.fractionCheckBox.connect("stateChanged(int)", self.onFractionChanged)#ルーラーの表示・非表示
+    #-------------------------------------------
+
+    #20220804_Koyanagi
+    # 前回のレイアウト設定の引継ぎ  2022/8/4  小柳
+    lastSessionLayout = qt.QSettings().value("MainWindow/layout")
+    self.setSlicerLayout(lastSessionLayout)
+    self.ui.layoutSelector.setCurrentIndex(lastSessionLayout)
+    #20220804_Koyanagi_end
 
     # Add vertical spacer
     self.layout.addStretch(1)
@@ -402,6 +424,72 @@ class RFVisualizationWidget(RFViewerWidget):
     sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
     for slice in sliceNodes:
       slice.SetWidgetVisible(self._displayResliceCursor)
+
+  #--- for cephalometric 20220924 koyanagi --- add
+  def onFOVChanged(self):
+    # セファロ用の拡大率補正用コンボボックスの値の反映
+    if self._isLoadingState:
+      return
+    #全断層画像（スライスビュー）のFOVへコンボボックスの値を反映
+    FOV = self.ui.FOVSelector.currentData
+    layoutManager = slicer.app.layoutManager()
+    for sliceViewName in layoutManager.sliceViewNames():
+      sliceWidget = layoutManager.sliceWidget(sliceViewName).sliceLogic()
+      sliceWidget.FitFOVToBackground(FOV)
+  #-------------------------------------------
+
+  #--- for cephalometric 20220924 koyanagi --- add
+  def onOrientationMarkerChanged(self):
+    if self._isLoadingState:
+      return
+    # Show/hide OrientationMarker
+    self._OrientationMarkerVisibility = self.ui.OrientationMarkerCheckBox.checked
+    viewNodes = slicer.util.getNodesByClass("vtkMRMLAbstractViewNode")
+    if self._OrientationMarkerVisibility:
+      OrientationMarkerType = slicer.vtkMRMLSliceNode.OrientationMarkerTypeCube
+    else:
+      OrientationMarkerType = 3 #OrientationMarkerTypeNoneコメントアウトされている。。。 あとで本体を修正
+    for viewNode in viewNodes:
+        viewNode.SetOrientationMarkerType(OrientationMarkerType)
+  #-------------------------------------------
+
+  #--- for cephalometric 20220924 koyanagi --- add
+  def onRulerChanged(self):
+    if self._isLoadingState:
+      return
+  	# Show/hide ruler
+    self._RulerVisibility = self.ui.rulerCheckBox.checked
+    viewNodes = slicer.util.getNodesByClass("vtkMRMLAbstractViewNode")
+    if self._RulerVisibility:
+      RulerType = 0 #あとで本体を修正
+    else:
+      RulerType = 1 #RulerTypeNoneコメントアウトされている。。。 あとで本体を修正
+    for viewNode in viewNodes:
+        viewNode.SetRulerColor(RulerType) # SetRulerType 本当はこっち
+  #-------------------------------------------
+
+  #--- for cephalometric & Speed up 20220924 koyanagi --- add
+  def onFractionChanged(self):
+    if self._isLoadingState:
+      return
+    # FractionSetting 断層厚の高速化
+    self._FractionSetting = self.ui.fractionCheckBox.checked
+    sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
+    if self._FractionSetting:
+      Fraction = 5 #暫定
+    else:
+      Fraction = 1
+    for slice in sliceNodes:
+      appLogic = slicer.app.applicationLogic()
+      sliceLogic = appLogic.GetSliceLogic(slice)
+      sliceLayerLogic = sliceLogic.GetBackgroundLayer()
+      reslice = sliceLayerLogic.GetReslice()
+      reslice.SetSlabSliceSpacingFraction(Fraction) 
+      slice.Modified()
+
+    thickness = self.ui.slabThicknessSlider.value
+    self.ui.setMIPThickness(thickness)
+  #-------------------------------------------
 
   def setPreset3D(self, preset):
     if self._isLoadingState:
