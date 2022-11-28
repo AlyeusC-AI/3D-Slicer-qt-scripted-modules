@@ -618,9 +618,10 @@ class RFVisualizationUI(qt.QWidget):
     selector = qt.QComboBox()
     #selector.setToolTip(self.tr("Select the FOV")) #一旦日本語で対応
     selector.setToolTip(self.tr("セファロ用の補正値選択"))
+    selector.addItem("", 0)
     for num in range(100, 400, 5): #レンジは確認後に修正
       selector.addItem(str(num), num)
-    selector.setCurrentText(self.tr("300"))
+    selector.setCurrentText(self.tr(""))
     return selector
   #-------------------------------------------
 

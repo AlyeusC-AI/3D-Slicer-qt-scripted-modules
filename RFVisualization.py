@@ -432,6 +432,8 @@ class RFVisualizationWidget(RFViewerWidget):
       return
     #全断層画像（スライスビュー）のFOVへコンボボックスの値を反映
     FOV = self.ui.FOVSelector.currentData
+    if FOV == 0:
+      return
     layoutManager = slicer.app.layoutManager()
     for sliceViewName in layoutManager.sliceViewNames():
       sliceWidget = layoutManager.sliceWidget(sliceViewName).sliceLogic()
