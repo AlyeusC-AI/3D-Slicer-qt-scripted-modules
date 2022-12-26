@@ -85,6 +85,13 @@ class RFVisualizationUI(qt.QWidget):
                      self.synchronizeCheckbox]:
       toggleCheckBox(checkBox, lastCheckedState=False)
 
+    # set default value for reloading
+    toggleCheckBox(self.rulerCheckBox, lastCheckedState=True)
+    toggleCheckBox(self.OrientationMarkerCheckBox, lastCheckedState=True)
+    toggleCheckBox(self.fractionCheckBox, lastCheckedState=False)
+    self.FOVSelector.setCurrentText(self.tr(""))
+    self.raycastSelector.setCurrentText(self.tr("Ray Max"))
+
     # Fit Volume ROI to volume (by default ROI is 0)
     if not isLoadingState:
       #これでROI初期化実現している
