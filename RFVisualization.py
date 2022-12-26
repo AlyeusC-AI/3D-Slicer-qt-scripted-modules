@@ -65,6 +65,12 @@ class RFVisualizationWidget(RFViewerWidget):
     self._FractionSetting = True
     #-------------------------------------------
 
+    self._updatingSliceNodes = False
+    self._updatingSephaloCorrectionValue = False
+    sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
+    for sliceNode in sliceNodes:
+      sliceNode.zoomChangeObserverTag = sliceNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.sliceModified)
+
   def getVolumeDisplayNode3D(self):
     return self._vrLogic.GetFirstVolumeRenderingDisplayNode(self.volumeNode)
   def setVolumeNode(self, volumeNode):
@@ -177,6 +183,20 @@ class RFVisualizationWidget(RFViewerWidget):
 
     # Add vertical spacer
     self.layout.addStretch(1)
+
+  def sliceModified(self, caller, event):
+    # if self._updatingSliceNodes:
+    #   # prevent infinite loop of slice node updates triggering slice node updates
+    #   return
+    if self._updatingSephaloCorrectionValue:
+      return
+    self._updatingSliceNodes = True
+    fov = caller.GetFieldOfView()[0]
+
+    FOV = self.ui.FOVSelector.currentData
+    if fov != FOV:
+      self.ui.FOVSelector.setCurrentText(self.tr(""))
+    self._updatingSliceNodes = False
 
   def _defaultIndustry3DPreset(self):
     """Get the default industry 3D rendering preset"""
@@ -435,9 +455,11 @@ class RFVisualizationWidget(RFViewerWidget):
     if FOV == 0:
       return
     layoutManager = slicer.app.layoutManager()
+    self._updatingSephaloCorrectionValue = True
     for sliceViewName in layoutManager.sliceViewNames():
       sliceWidget = layoutManager.sliceWidget(sliceViewName).sliceLogic()
       sliceWidget.FitFOVToBackground(FOV)
+    self._updatingSephaloCorrectionValue = False
   #-------------------------------------------
 
   #--- for cephalometric 20220924 koyanagi --- add
