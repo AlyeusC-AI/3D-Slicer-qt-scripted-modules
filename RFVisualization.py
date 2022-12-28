@@ -164,7 +164,7 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.slabThicknessSlider.connect("valueChanged(int)", self.onSlabThicknessSliderChanged)
     self.ui.thicknessSelector.connect("currentIndexChanged(int)", self.onMIPThicknessChanged)
     self.ui.displayROICheckBox.connect("stateChanged(int)", self.onROIDisplayed)
-    # self.ui.raycastSelector.connect("currentIndexChanged(int)", self.onRaycastChanged)
+    self.ui.raycastSelector.connect("currentIndexChanged(int)", self.onRaycastChanged)
     #--- for cephalometric 20220924 koyanagi --- add
     self.ui.FOVSelector.connect("currentIndexChanged(int)", self.onFOVChanged)#セファロ拡大率補正用コンボボックス
     self.ui.OrientationMarkerCheckBox.connect("stateChanged(int)", self.onOrientationMarkerChanged)#マーカーキューブの表示・非表示
@@ -363,63 +363,6 @@ class RFVisualizationWidget(RFViewerWidget):
     thickness = self.ui.slabThicknessSlider.value
     self.ui.setMIPThickness(thickness)
     return
-    data = self.ui.raycastSelector.currentData
-    mode = vtk.VTK_IMAGE_SLAB_MAX
-    if data == 1:
-      mode = vtk.VTK_IMAGE_SLAB_MAX
-    elif data == 2:
-      mode = vtk.VTK_IMAGE_SLAB_MEAN
-    else:
-      mode = vtk.VTK_IMAGE_SLAB_SUM
-    sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
-    for slice in sliceNodes:
-      # slice.SetSlabMode(vtk.VTK_IMAGE_SLAB_MAX)
-      # slice.SetSlabMode(vtk.VTK_IMAGE_SLAB_MEAN)
-      # print(str(thickness))
-      slice.SetSlabMode(mode)
-      if mode == vtk.VTK_IMAGE_SLAB_MAX:
-        slice.SetSlabNumberOfSlices(600)
-      else:
-        slice.SetSlabNumberOfSlices(10)
-      slice.SetMipThickness(thickness)
-      slice.Modified()
-
-    return
-    
-    if data == 1:
-      sliceNode = slicer.mrmlScene.GetNodeByID('vtkMRMLSliceNodeRed')
-      appLogic = slicer.app.applicationLogic()
-      sliceLogic = appLogic.GetSliceLogic(sliceNode)
-      sliceLayerLogic = sliceLogic.GetBackgroundLayer()
-      reslice = sliceLayerLogic.GetReslice()
-      reslice.SetSlabModeToMax()
-      reslice.SetSlabNumberOfSlices(600) # use a large number of slices (600) to cover the entire volume
-      reslice.SetSlabSliceSpacingFraction(0.5) # spacing between slices are 0.5 pixel (supersampling is useful to reduce interpolation artifacts)
-      sliceNode.Modified()
-      print("ray max")
-    elif data == 2:
-      sliceNode = slicer.mrmlScene.GetNodeByID('vtkMRMLSliceNodeRed')
-      appLogic = slicer.app.applicationLogic()
-      sliceLogic = appLogic.GetSliceLogic(sliceNode)
-      sliceLayerLogic = sliceLogic.GetBackgroundLayer()
-      reslice = sliceLayerLogic.GetReslice()
-      reslice.SetSlabModeToMean()
-      reslice.SetSlabNumberOfSlices(10) # mean of 10 slices will computed
-      reslice.SetSlabSliceSpacingFraction(0.3) # spacing between each slice is 0.3 pixel (total 10 * 0.3 = 3 pixel neighborhood)
-      sliceNode.Modified()
-      print("ray mean")
-    else:
-      sliceNode = slicer.mrmlScene.GetNodeByID('vtkMRMLSliceNodeRed')
-      appLogic = slicer.app.applicationLogic()
-      sliceLogic = appLogic.GetSliceLogic(sliceNode)
-      sliceLayerLogic = sliceLogic.GetBackgroundLayer()
-      reslice = sliceLayerLogic.GetReslice()
-      reslice.SetSlabModeToSum()
-      reslice.SetSlabNumberOfSlices(10) # mean of 10 slices will computed
-      reslice.SetSlabSliceSpacingFraction(0.3) # spacing between each slice is 0.3 pixel (total 10 * 0.3 = 3 pixel neighborhood)
-      sliceNode.Modified()
-      print("ray sum")
-
   def onROIDisplayed(self):
     checkVal = self.ui.displayROICheckBox.checked
     # 有効化の順序が重要。transform -> roiとすれば、重畳したNodeに対するUI上での操作は先に登録された順となるのでtransformにて通知が飛ぶ。
