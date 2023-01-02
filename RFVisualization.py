@@ -168,7 +168,9 @@ class RFVisualizationWidget(RFViewerWidget):
     #--- for cephalometric 20220924 koyanagi --- add
     self.ui.FOVSelector.connect("currentIndexChanged(int)", self.onFOVChanged)#セファロ拡大率補正用コンボボックス
     self.ui.OrientationMarkerCheckBox.connect("stateChanged(int)", self.onOrientationMarkerChanged)#マーカーキューブの表示・非表示
+    self.onOrientationMarkerChanged()#初期設定値の内容を反映させるため
     self.ui.rulerCheckBox.connect("stateChanged(int)", self.onRulerChanged)#ルーラーの表示・非表示
+    self.onRulerChanged()#初期設定値の内容を反映させるため
     #-------------------------------------------
     #--- for cephalometric & Speed up 20220924 koyanagi --- add
     self.ui.fractionCheckBox.connect("stateChanged(int)", self.onFractionChanged)#ルーラーの表示・非表示
@@ -428,11 +430,11 @@ class RFVisualizationWidget(RFViewerWidget):
     self._RulerVisibility = self.ui.rulerCheckBox.checked
     viewNodes = slicer.util.getNodesByClass("vtkMRMLAbstractViewNode")
     if self._RulerVisibility:
-      RulerType = 0 #あとで本体を修正
+      RulerType = 1 #Thin
     else:
-      RulerType = 1 #RulerTypeNoneコメントアウトされている。。。 あとで本体を修正
+      RulerType = 0 #None
     for viewNode in viewNodes:
-        viewNode.SetRulerColor(RulerType) # SetRulerType 本当はこっち
+        viewNode.SetRulerType(RulerType)
   #-------------------------------------------
 
   #--- for cephalometric & Speed up 20220924 koyanagi --- add
