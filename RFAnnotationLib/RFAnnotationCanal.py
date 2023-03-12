@@ -56,8 +56,9 @@ class RFAnnotationCanalWidget(qt.QWidget):
     return qt.QIcon()
 
   def setupOptionsFrame(self):
-    self.optionsLayout = qt.QFormLayout()
-
+    #レイアウト修正　20230114 koyanagi
+    self.optionsLayout = qt.QHBoxLayout()#レイアウト修正
+    
     # Fiducial Placement widget
     self.fiducialPlacementToggle = slicer.qSlicerMarkupsPlaceWidget()
     self.fiducialPlacementToggle.setMRMLScene(slicer.mrmlScene)
@@ -78,9 +79,12 @@ class RFAnnotationCanalWidget(qt.QWidget):
     self.radiusSpinBox.connect('valueChanged(double)', self.onRadiusChanged)
 
     # Setup layout
-    self.optionsLayout.addRow(self.fiducialPlacementToggle)
-    self.optionsLayout.addRow(self.tr('Radius: '), self.radiusSpinBox)
-
+    self.optionsLayout.addWidget(self.fiducialPlacementToggle)#レイアウト修正
+    self.radiusLabel = qt.QLabel(self.tr('Radius: '))#レイアウト修正
+    self.radiusLabel.setStyleSheet("QLabel {align:right;}")#レイアウト修正
+    self.optionsLayout.addWidget(self.radiusLabel, 0, 2)#レイアウト修正
+    self.optionsLayout.addWidget(self.radiusSpinBox)
+    
     self.optionsWidget = qt.QWidget()
     self.optionsWidget.setLayout(self.optionsLayout)
     self.optionsWidget.hide()

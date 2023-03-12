@@ -41,7 +41,9 @@ class ToolbarWidget(qt.QWidget):
         qt.QWidget.__init__(self)
         self._sectionLayout = None
         self._layout = qt.QVBoxLayout()
-        # self._layout.setSpacing(10)
+        #---レイアウト変更--- 20221227 koyanagi
+        self._layout.setSpacing(0)#アイコン同士の間隔を削除
+        self._layout.setMargin(10)#アイコンを並べるスタート位置を調整
         self.setLayout(self._layout)
 
     def _hasPreviousSection(self):
@@ -67,7 +69,9 @@ class ToolbarWidget(qt.QWidget):
         separator = qt.QFrame()
         separator.setFrameShape(qt.QFrame.HLine)
         separator.setFrameShadow(qt.QFrame.Sunken)
-        separator.setStyleSheet("background-color: grey;")
+        #---レイアウト変更--- 20221227 koyanagi
+        #separator.setStyleSheet("background-color: grey;")
+        separator.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #ffffff, stop:1 #f0f0f0);")#グラデーションに変更
         self._layout.addWidget(separator)
 
     def _addSectionName(self, sectionName):

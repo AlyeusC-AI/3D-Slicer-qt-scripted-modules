@@ -233,15 +233,25 @@ class RFImplantWidget(RFViewerWidget):
         lm = slicer.app.layoutManager()
         sliceNames = lm.sliceViewNames()
         pt = [0, 0, 0]
+        Flg = 0
+
+        viewNodes = slicer.util.getNodesByClass("vtkMRMLSliceCompositeNode")
+        for viewNode in viewNodes:
+            if viewNode.GetSliceIntersectionVisibility() == 0:
+                Flg = 1
+                viewNode.SetSliceIntersectionVisibility(1)
 
         for sliceName in sliceNames:
-          sliceWidget = lm.sliceWidget(sliceName)
-          sliceView = sliceWidget.sliceView()      
-          if type(sliceView) == slicer.qMRMLSliceView:
-            pt[0] = sliceView.getIntersectionRASX()
-            pt[1] = sliceView.getIntersectionRASY()
-            pt[2] = sliceView.getIntersectionRASZ()
-            return pt
+            sliceWidget = lm.sliceWidget(sliceName)
+            sliceView = sliceWidget.sliceView()      
+            if type(sliceView) == slicer.qMRMLSliceView:
+                pt[0] = sliceView.getIntersectionRASX()
+                pt[1] = sliceView.getIntersectionRASY()
+                pt[2] = sliceView.getIntersectionRASZ()
+                if Flg == 1:
+                    for viewNode in viewNodes:
+                        viewNode.SetSliceIntersectionVisibility(0)
+                return pt
 
     def _centerImplantNearFace(self, newImplant):
         """Positions new implant near face of the patient"""

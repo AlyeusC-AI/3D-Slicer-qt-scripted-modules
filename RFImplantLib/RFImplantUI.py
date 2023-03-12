@@ -65,6 +65,11 @@ class RFImplantUI(qt.QWidget):
     """Create the view which listed the added implants"""
     self._addedImplantModel = qt.QStandardItemModel()
     listView = qt.QListView()
+    #---レイアウト変更--- 20221227 koyanagi
+    listView.setStyleSheet("""
+    	QListView::item:selected:active {selection-color:white;}
+    	QListView::item:selected:!active {selection-color:white;}""")
+    
     listView.setModel(self._addedImplantModel)
     listView.setEditTriggers(qt.QAbstractItemView.NoEditTriggers)
     listView.setContextMenuPolicy(qt.Qt.ActionsContextMenu)
@@ -87,6 +92,11 @@ class RFImplantUI(qt.QWidget):
   def createImplantListView(self):
     """ Create the view where all non filtered implants will be listed"""
     listView = qt.QTreeView()
+    #---レイアウト変更--- 20221227 koyanagi
+    listView.setStyleSheet("""
+    	QTreeView::item:selected:active {selection-color:white;}
+    	QTreeView::item:selected:!active {selection-color:white;}""")
+    
     listView.name = 'll'
     # listView.setViewMode(qt.QListView.ListMode)
     # listView.setUniformItemSizes(True)
@@ -96,7 +106,7 @@ class RFImplantUI(qt.QWidget):
     # listView.setResizeMode(qt.QListView.Adjust)  # resize list view if widget width is changed
     # listView.setSpacing(0)
     listView.setEditTriggers(qt.QAbstractItemView.NoEditTriggers)
-
+    
     listView.setModel(self._filterModel)
     listView.connect("doubleClicked(QModelIndex)", self.loadCurrentImplant)
 

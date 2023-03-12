@@ -57,10 +57,12 @@ class RFViewerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         """
         Initialize current scene for undo
         """
-        slicer.mrmlScene.SetUndoOn()
-        # slicer.mrmlScene.ClearUndoStack()
+        #---インプラント消えるバグ修正--- 20221227 koyanagi
+        #SetUndoOn,ClearUndoStack,SaveStateForUndo　コメントアウト
+        #slicer.mrmlScene.SetUndoOn()
+        #slicer.mrmlScene.ClearUndoStack()
         self.saveState()
-        slicer.mrmlScene.SaveStateForUndo()
+        #slicer.mrmlScene.SaveStateForUndo()
         # Mrml scene undo needs to be turn off in order to avoid
         # mechanical added into undo stack when a mrml state is updated
         slicer.mrmlScene.SetUndoOff()

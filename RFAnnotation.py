@@ -33,6 +33,11 @@ class RFAnnotationWidget(RFViewerWidget):
     self._translateAnnotationWidgets()
 
     self.canalWidget = RFAnnotationCanalWidget(parent)
+    
+    #���C�A�E�g�C���@20230114 koyanagi
+    self.layout.setDirection(0)#�����C��
+    self.layout.addStrut(200)#�T�C�Y�C��
+    
     self.layout.addWidget(self.canalWidget)
     self.layout.addWidget(self._widget)
 
@@ -42,8 +47,12 @@ class RFAnnotationWidget(RFViewerWidget):
 
     # Add canal widget advanced parameters between markups layout and tree view
     markupsVLayout = self._widget.findChild("QVBoxLayout", "verticalLayout_2")
-    markupsVLayout.insertWidget(1, self.canalWidget)
-
+    markupsVLayout.insertWidget(-1, self.canalWidget)#�\�����@�C��
+    
+    self.lineProfileWidget = RFLineProfileWidget(parent)
+    markupsVLayout.insertWidget(-1, self.lineProfileWidget)#�\�����@�C��
+    
+    #20220517_yori self.buttonCurve�̃R�����g�A�E�g���O��.
     self.buttonCurve = self._widget.findChild('QPushButton', 'createOpenCurvePushButton')
     self.treeView = None
     self.connectSubjectHierarchy()
@@ -51,9 +60,6 @@ class RFAnnotationWidget(RFViewerWidget):
     # self.updateCurveButtonState()
     self.updateWidgetUI()
     self.connectActions()
-
-    self.lineProfileWidget = RFLineProfileWidget(parent)
-    self.layout.addWidget(self.lineProfileWidget)
 
     self._volumeNode = None
 
@@ -64,12 +70,10 @@ class RFAnnotationWidget(RFViewerWidget):
     slicer.util.findChild(self._widget, "createAnglePushButton").setToolTip(self.tr("Create angle measurement"))
     # slicer.util.findChild(self._widget, "createOpenCurvePushButton").setToolTip(
     #   self.tr("Create panorama reconstruction curve"))
-
-    # TODO: Annotationボタンを利用して、Annotationできることを確認するため表示。最終的にはhideする
-    ## slicer.util.findChild(self._widget, "createLabel").hide()
-    ## slicer.util.findChild(self._widget, "createLinePushButton").hide()
-    ## slicer.util.findChild(self._widget, "createAnglePushButton").hide()
-    ## slicer.util.findChild(self._widget, "createOpenCurvePushButton").hide()
+    slicer.util.findChild(self._widget, "createLabel").hide()
+    slicer.util.findChild(self._widget, "createLinePushButton").hide()
+    slicer.util.findChild(self._widget, "createAnglePushButton").hide()
+    slicer.util.findChild(self._widget, "createOpenCurvePushButton").hide()
     # Translate qMRMLSubjectHierarchyTreeView
     tree = slicer.util.findChild(self._widget, "activeMarkupTreeView")
     treeHeaderTranslations = [
@@ -92,8 +96,7 @@ class RFAnnotationWidget(RFViewerWidget):
 
   def removeItem(self, *args):
     self.lineProfileWidget.setMarkupNode(None)
-    # TODO: コードの意図確認。Annotation要素が削除されたらCanalも全削除される必要がある?
-    # self.canalWidget.deleteCanal()
+    self.canalWidget.deleteCanal()
 
   def __del__(self):
     slicer.mrmlScene.RemoveObserver(self.nodeRemovedObserverTag)

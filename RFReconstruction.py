@@ -1,4 +1,4 @@
-import errno
+﻿import errno
 import shutil
 import logging
 import os
@@ -439,6 +439,18 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
                 # value =value.encode("utf-8")
                 # value = value.decode("utf-8")
                 return value        
+        #RF_20220203_yori
+        def IDvalue(self, name, default=None) -> str:
+            """Read INI value with input name section and return value as float if number else as str"""
+            try:
+                value = self.settings.value(name, default)
+                if value is None:
+                    return ""
+                else:
+                    return str(value)
+            except ValueError:
+                return value
+        #RF_20220203_end
         def sectionValue(self, section, name, default=None):
             return self.value('{}/{}'.format(section, name), default)
 
@@ -469,6 +481,9 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
     def __init__(self):
         super(RFReconstructionLogic, self).__init__()
         self._tmpSymlink = TemporarySymlink()
+#RF_20220704_yori
+        self._processedMnriPaths = set()
+#RF_20220704_end
 
     @staticmethod
     def stripWhiteSpace(inStr):
@@ -688,10 +703,16 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         sign = -1 # maybe the following ?  1 if mnri_settings.value("Frame/ImageFlipNeed") != 'None' else -1
         angleSign = -1 if mnri_settings.value("Geometry/AntiClkRotDir") == 0 else 1
 
-        settings = qt.QSettings()
-        settings.beginGroup("Reconstruction")
-        hardware = settings.value("hardware", "cuda")
-        settings.endGroup()
+        #RF_20220622_yori iniではなくmnriから設定読み込む.
+        hardware = mnri_settings.value("Reconstruction/hardware")
+        if hardware == "":
+            hardware = "cuda"
+        #RF_20220622_else
+        #settings = qt.QSettings()
+        #settings.beginGroup("Reconstruction")
+        #hardware = settings.value("hardware", "cuda")
+        #settings.endGroup()
+        #RF_20220622_end
 
         pixel_depth = int(mnri_settings.value("Frame/PixelDepth"))
         if pixel_depth <= 13:
@@ -705,9 +726,16 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         subsetSize = int(mnri_settings.value("Frame/subsetSize"))
 
         preset = int(mnri_settings.value('Volume/TFPresetIndex'))
-        CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
-        airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
-        watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
+        
+        #RF_20220215_yori
+        CTValuePreset = qt.QSettings('C:/Users/NAOMI/AppData/Roaming/RFCo/CTValuePreset.ini', qt.QSettings.IniFormat)#フルパス指定.
+        airvalue = CTValuePreset.value('/CTValuePreset{:04d}_Air'.format(preset), "0.0")#[Key]値がないので先頭に"/".
+        watervalue = CTValuePreset.value('/CTValuePreset{:04d}_Water'.format(preset), "0.018")#同上.
+        #RF_20220215else
+        #CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
+        #airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
+        #watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
+        #RF_20220215end
         
         tomoTheta = numpy.deg2rad(mnri_settings.value("Geometry/TomoTheta") - 90)
         tomoDist = numpy.sin(tomoTheta) * mnri_settings.value("Geometry/XSrcDetectDist")
@@ -736,7 +764,13 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
             # FDK
             "hann": mnri_settings.value("Process/FrequencyCut"),  # Cut frequency for hann window in ]0, 1] (0. disables it)
             "hardware": hardware, # cuda or cpu
-            "lowmem": True,
+#RF_20220704_yori CLI0 GPU設定.
+            "lowmem": bool(mnri_settings.value("Process/LowGPUMemory", default=False)),
+            "low_mem_proj_scale_ratio": mnri_settings.value("Process/LowMemoryProjectionScaleRatio", default=0.5),
+            "do_regenerate_recon": mnri_file_path not in self._processedMnriPaths,
+#RF_20220704_else
+#            "lowmem": True,
+#RF_20220704_end
             "divisions": divisions,
             "subsetsize": subsetSize,
             "mask": False,
@@ -782,6 +816,15 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         if i0 is not None:
             parameters["i0"] = i0
 
+#RF_20220704_yori CLI0 MAR設定.
+        parameters["do_linear_mar"] = False
+        linearMARThreshold = mnri_settings.value('SieraRE/LinearMARThreshold')
+        if linearMARThreshold != "":
+            parameters["linear_mar_threshold"] = linearMARThreshold
+            parameters["do_linear_mar"] = True
+
+        self._processedMnriPaths.add(mnri_file_path)
+#RF_20220704_end
         return parameters
             
     def createCLIParameters1(self, mnri_file_path, output_path=None):
@@ -801,10 +844,16 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         sign = -1 # maybe the following ?  1 if mnri_settings.value("Frame/ImageFlipNeed") != 'None' else -1
         angleSign = -1 if mnri_settings.value("Geometry/AntiClkRotDir") == 0 else 1
 
-        settings = qt.QSettings()
-        settings.beginGroup("Reconstruction")
-        hardware = settings.value("hardware", "cuda")
-        settings.endGroup()
+        #RF_20220622_yori iniではなくmnriから設定読み込む.
+        hardware = mnri_settings.value("Reconstruction/hardware")
+        if hardware == "":
+            hardware = "cuda"
+        #RF_20220622_else
+        #settings = qt.QSettings()
+        #settings.beginGroup("Reconstruction")
+        #hardware = settings.value("hardware", "cuda")
+        #settings.endGroup()
+        #RF_20220622_end
 
         pixel_depth = int(mnri_settings.value("Frame/PixelDepth"))
         if pixel_depth <= 13:
@@ -817,10 +866,17 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         subsetSize = int(mnri_settings.value("Frame/subsetSize"))
 
         preset = int(mnri_settings.value('Volume/TFPresetIndex'))
-        CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
-        airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
-        watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
-        
+
+        #RF_20220215_yori
+        CTValuePreset = qt.QSettings('C:/Users/NAOMI/AppData/Roaming/RFCo/CTValuePreset.ini', qt.QSettings.IniFormat)#フルパス指定.
+        airvalue = CTValuePreset.value('/CTValuePreset{:04d}_Air'.format(preset), "0.0")#[Key]値がないので先頭に"/".
+        watervalue = CTValuePreset.value('/CTValuePreset{:04d}_Water'.format(preset), "0.018")#同上.
+        #RF_20220215else
+        #CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
+        #airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
+        #watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
+        #RF_20220215end
+
         tomoTheta = numpy.deg2rad(mnri_settings.value("Geometry/TomoTheta1") - 90)
         tomoDist = numpy.sin(tomoTheta) * mnri_settings.value("Geometry/XSrcDetectDist1")
         
@@ -848,7 +904,13 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
             # FDK
             "hann": mnri_settings.value("Process/FrequencyCut"),  # Cut frequency for hann window in ]0, 1] (0. disables it)
             "hardware": hardware, # cuda or cpu
-            "lowmem": True,
+#RF_20220704_yori CLI1 GPU設定.
+            "lowmem": bool(mnri_settings.value("Process/LowGPUMemory", default=False)),
+            "low_mem_proj_scale_ratio": mnri_settings.value("Process/LowMemoryProjectionScaleRatio", default=0.5),
+            "do_regenerate_recon": mnri_file_path not in self._processedMnriPaths,
+#RF_20220704_else
+#            "lowmem": True,
+#RF_20220704_end
             "divisions": divisions,
             "subsetsize": subsetSize,
             "mask": False,
@@ -894,6 +956,15 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         if i0 is not None:
             parameters["i0"] = i0
 
+#RF_20220704_yori CLI1 MAR設定.
+        parameters["do_linear_mar"] = False
+        linearMARThreshold = mnri_settings.value('SieraRE/LinearMARThreshold')
+        if linearMARThreshold != "":
+            parameters["linear_mar_threshold"] = linearMARThreshold
+            parameters["do_linear_mar"] = True
+
+        self._processedMnriPaths.add(mnri_file_path)
+#RF_20220704_end
         return parameters
             
     def createCLIParameters2(self, mnri_file_path, output_path=None):
@@ -913,10 +984,16 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         sign = -1 # maybe the following ?  1 if mnri_settings.value("Frame/ImageFlipNeed") != 'None' else -1
         angleSign = -1 if mnri_settings.value("Geometry/AntiClkRotDir") == 0 else 1
 
-        settings = qt.QSettings()
-        settings.beginGroup("Reconstruction")
-        hardware = settings.value("hardware", "cuda")
-        settings.endGroup()
+        #RF_20220622_yori iniではなくmnriから設定読み込む.
+        hardware = mnri_settings.value("Reconstruction/hardware")
+        if hardware == "":
+            hardware = "cuda"
+        #RF_20220622_else
+        #settings = qt.QSettings()
+        #settings.beginGroup("Reconstruction")
+        #hardware = settings.value("hardware", "cuda")
+        #settings.endGroup()
+        #RF_20220622_end
 
         pixel_depth = int(mnri_settings.value("Frame/PixelDepth"))
         if pixel_depth <= 13:
@@ -929,9 +1006,16 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         subsetSize = int(mnri_settings.value("Frame/subsetSize"))
 
         preset = int(mnri_settings.value('Volume/TFPresetIndex'))
-        CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
-        airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
-        watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
+        
+        #RF_20220215_yori
+        CTValuePreset = qt.QSettings('C:/Users/NAOMI/AppData/Roaming/RFCo/CTValuePreset.ini', qt.QSettings.IniFormat)#フルパス指定.
+        airvalue = CTValuePreset.value('/CTValuePreset{:04d}_Air'.format(preset), "0.0")#[Key]値がないので先頭に"/".
+        watervalue = CTValuePreset.value('/CTValuePreset{:04d}_Water'.format(preset), "0.018")#同上.
+        #RF_20220215else
+        #CTValuePreset = qt.QSettings('CTValuePreset.ini', qt.QSettings.IniFormat)  # File must be next to RFViewer.ini
+        #airvalue = CTValuePreset.value('CTValuePreset{:04d}_Air'.format(preset), "0.0")
+        #watervalue = CTValuePreset.value('CTValuePreset{:04d}_Water'.format(preset), "0.018")
+        #RF_20220215end
         
         tomoTheta = numpy.deg2rad(mnri_settings.value("Geometry/TomoTheta2") - 90)
         tomoDist = numpy.sin(tomoTheta) * mnri_settings.value("Geometry/XSrcDetectDist2")
@@ -960,7 +1044,13 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
             # FDK
             "hann": mnri_settings.value("Process/FrequencyCut"),  # Cut frequency for hann window in ]0, 1] (0. disables it)
             "hardware": hardware, # cuda or cpu
-            "lowmem": True,
+#RF_20220704_yori CLI2 GPU設定.
+            "lowmem": bool(mnri_settings.value("Process/LowGPUMemory", default=False)),
+            "low_mem_proj_scale_ratio": mnri_settings.value("Process/LowMemoryProjectionScaleRatio", default=0.5),
+            "do_regenerate_recon": mnri_file_path not in self._processedMnriPaths,
+#RF_20220704_else
+#            "lowmem": True,
+#RF_20220704_end
             "divisions": divisions,
             "subsetsize": subsetSize,
             "mask": False,
@@ -1006,6 +1096,15 @@ class RFReconstructionLogic(ScriptedLoadableModuleLogic):
         if i0 is not None:
             parameters["i0"] = i0
 
+#RF_20220704_yori CLI2 MAR設定.
+        parameters["do_linear_mar"] = False
+        linearMARThreshold = mnri_settings.value('SieraRE/LinearMARThreshold')
+        if linearMARThreshold != "":
+            parameters["linear_mar_threshold"] = linearMARThreshold
+            parameters["do_linear_mar"] = True
+
+        self._processedMnriPaths.add(mnri_file_path)
+#RF_20220704_end
         return parameters
     @staticmethod
     def imageBits(mnri_settings):

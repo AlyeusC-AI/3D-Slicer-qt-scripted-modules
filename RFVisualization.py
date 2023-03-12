@@ -1,4 +1,4 @@
-import qt
+﻿import qt
 import slicer
 from slicer.ScriptedLoadableModule import *
 import vtk
@@ -63,6 +63,11 @@ class RFVisualizationWidget(RFViewerWidget):
     #-------------------------------------------
     #--- for cephalometric & Speed up 20220924 koyanagi --- add
     self._FractionSetting = True
+    #-------------------------------------------
+    #---- セファロ用設定の復元 20230124 koyanagi -------------
+    self._SlabMode_Setting = {}
+    self._MipThickness_Setting = {}
+    self._NumberOfSlices_Setting = {}
     #-------------------------------------------
 
     self._updatingSliceNodes = False
@@ -168,9 +173,9 @@ class RFVisualizationWidget(RFViewerWidget):
     #--- for cephalometric 20220924 koyanagi --- add
     self.ui.FOVSelector.connect("currentIndexChanged(int)", self.onFOVChanged)#セファロ拡大率補正用コンボボックス
     self.ui.OrientationMarkerCheckBox.connect("stateChanged(int)", self.onOrientationMarkerChanged)#マーカーキューブの表示・非表示
-    self.onOrientationMarkerChanged()#初期設定値の内容を反映させるため
+    self.onOrientationMarkerChanged()#初期設定値の内容を反映させるため #---ルーラー非表示対応--- 20230105 Yao-sama
     self.ui.rulerCheckBox.connect("stateChanged(int)", self.onRulerChanged)#ルーラーの表示・非表示
-    self.onRulerChanged()#初期設定値の内容を反映させるため
+    self.onRulerChanged()#初期設定値の内容を反映させるため #---ルーラー非表示対応--- 20230105 Yao-sama
     #-------------------------------------------
     #--- for cephalometric & Speed up 20220924 koyanagi --- add
     self.ui.fractionCheckBox.connect("stateChanged(int)", self.onFractionChanged)#ルーラーの表示・非表示
@@ -354,9 +359,22 @@ class RFVisualizationWidget(RFViewerWidget):
       return
     
     thickness = self.ui.thicknessSelector.currentData
-    self.ui.slabThicknessSlider.setValue(thickness)
+    
+    #--- 断層厚の厚さ修正--- 20221227 
+    #ボクセルピッチの取得　X軸のピッチを使用
+    volumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
+    if not volumeNode:
+      volume_spacing = (0.1, 0.1, 0.1)
+    else:
+      volume_spacing = volumeNode.GetSpacing()
+    
+    #ボクセル数変換
+    vol_convert = (thickness / volume_spacing[0])#スライドバーはボクセル数単位の為、ｍｍ変換
+    
+    self.ui.slabThicknessSlider.setValue(int(vol_convert))
+    
+    self.ui.setMIPThickness(int(vol_convert))
 
-    self.ui.setMIPThickness(thickness)
 
   def onRaycastChanged(self):
     if self._isLoadingState:
@@ -430,11 +448,11 @@ class RFVisualizationWidget(RFViewerWidget):
     self._RulerVisibility = self.ui.rulerCheckBox.checked
     viewNodes = slicer.util.getNodesByClass("vtkMRMLAbstractViewNode")
     if self._RulerVisibility:
-      RulerType = 1 #Thin
+      RulerType = 1 #Thin #---ルーラー非表示対応--- 20230105 Yao-sama
     else:
-      RulerType = 0 #None
+      RulerType = 0 #None #---ルーラー非表示対応--- 20230105 Yao-sama
     for viewNode in viewNodes:
-        viewNode.SetRulerType(RulerType)
+        viewNode.SetRulerType(RulerType) # SetRulerType 本当はこっち
   #-------------------------------------------
 
   #--- for cephalometric & Speed up 20220924 koyanagi --- add
@@ -445,7 +463,7 @@ class RFVisualizationWidget(RFViewerWidget):
     self._FractionSetting = self.ui.fractionCheckBox.checked
     sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
     if self._FractionSetting:
-      Fraction = 5 #暫定
+      Fraction = 7 #暫定
     else:
       Fraction = 1
     for slice in sliceNodes:
@@ -607,6 +625,11 @@ class RFVisualizationWidget(RFViewerWidget):
 
   def onSessionAboutToBeSaved(self):
     """Override from RFViewerWidget"""
+    #---- セファロ用設定の復元 20230124 koyanagi -------------
+    #間引き化の設定を読み込めない為、一旦チェックを外して保存
+    if self.ui.fractionCheckBox.checked:
+    	self.ui.fractionCheckBox.setChecked(False)
+    #----------------------------------------------------------
     parameter = self.getParameterNode()
     parameter.SetParameter("VolumeNodeID", self.volumeNode.GetID())
     self.saveState()
@@ -633,6 +656,9 @@ class RFVisualizationWidget(RFViewerWidget):
     self.applyState()
     self._isLoadingState = False
     self._refresh3DView()
+    #---- セファロ用設定の復元 20230124 koyanagi -------------
+    self._restoreCephalo_Setting()
+    #-----------------------------------------------------------
 
   def applyState(self):
     """Override from RFViewerWidget"""
@@ -725,3 +751,38 @@ class RFVisualizationWidget(RFViewerWidget):
 
   def _disable3DVisibility(self):
     self._restore3DVisibility(forcedVisibilityValue=False)
+
+  #---- セファロ用設定の復元 20230124 koyanagi -------------
+  def _restoreCephalo_Setting(self):
+    """
+    For restoring settings for cephalometric
+    """
+    #--- スライスの表示設定の読み込み ---
+    sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
+    cnt = 0
+    for slice in sliceNodes:
+      self._SlabMode_Setting[cnt] = slice.GetSlabMode()#投影方法
+      self._NumberOfSlices_Setting[cnt] = slice.GetSlabNumberOfSlices()#枚数
+      cnt = cnt + 1
+    #--- スラブモードの設定　（最初のノードの設定に合わせる）---
+    if self._SlabMode_Setting[0] == vtk.VTK_IMAGE_SLAB_MAX:
+      mode_index = 0
+      #print("SlabMode_Setting MAX")
+    elif self._SlabMode_Setting[0] == vtk.VTK_IMAGE_SLAB_MEAN:
+      mode_index = 1
+      #print("SlabMode_Setting MEAN")
+    elif self._SlabMode_Setting[0] == vtk.VTK_IMAGE_SLAB_MIN:
+      mode_index = 2
+      #print("SlabMode_Setting MIN")
+    else:
+      mode_index = 0
+      #print("SlabMode_Setting unknown")
+    #セレクタの更新
+    self.ui.raycastSelector.setCurrentIndex(mode_index)
+    #--- 断層厚の設定　（最初のノードの設定に合わせる）---
+    # Apply slab thickness on new slice views　スライドバーの最大値の更新
+    self.onSlabThicknessSliderChanged()
+    #　断層厚の値の更新
+    self.ui.slabThicknessSlider.setValue(self._NumberOfSlices_Setting[0])
+    self.ui.setMIPThickness(self._NumberOfSlices_Setting[0])
+    #print("_NumberOfSlices_Setting",self._NumberOfSlices_Setting[0])

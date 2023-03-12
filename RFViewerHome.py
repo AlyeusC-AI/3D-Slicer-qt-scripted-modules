@@ -127,14 +127,14 @@ class RFViewerHomeWidget(RFViewerWidget):
         # Instantiate Toolbar and module widgets
         self._toolbarWidget = ToolbarWidget()
         self._patientInfoWidget = qt.QLabel()
+        #---レイアウト変更--- 20221227 koyanagi
         self._showhidebutton = qt.QPushButton()
-        self._showhidebutton.setText("ツールバー非表示")
-        # self._showhidebutton.setIcon(Icons.rightarrow)
-        self._showhidebutton.move(30,20)
-        self._showhidebutton.setFont(qt.QFont('Arial', 8))
-        self._showhidebutton.setMinimumWidth(5)
-        self._showhidebutton.setMaximumWidth(35)
-        # self._showhidebutton.adjustSize()
+        self._showhidebutton.setIcon(Icons.rightarrow)
+        self._showhidebutton.setIconSize(qt.QSize(10,10))
+        self._showhidebutton.setFixedSize(20, 17)
+        self._showhidebutton.setStyleSheet("QPushButton {max-width: 20px; min-width: 2px; padding: 0px; padding-right: 7px; padding-left: 2px; border-width: 1px; margin: 0px; border-radius:5px; spacing: 1;}")
+        
+        
         self._moduleWidget = ModuleWidget()
         self._moduleWidget1 = ModuleWidget() 
         # Add toolbar button to the top of the dock to always be visible even on module change
@@ -145,9 +145,23 @@ class RFViewerHomeWidget(RFViewerWidget):
         self.dock_content = slicer.util.findChild(slicer.util.mainWindow(), "dockWidgetContents")
         self._patientInfoWidget.setText("")
         # self._patientInfoWidget.setStyleSheet("QLabel { color : orange; }")
+        
+        #---レイアウト変更--- 20221227 koyanagi
+        separator = qt.QFrame()
+        separator.setFrameShape(qt.QFrame.HLine)
+        separator.setFrameShadow(qt.QFrame.Plain)
+        separator.setLineWidth(0)
+        separator.setMidLineWidth(0)
+        separator.setStyleSheet("background-color: #f4f4f4;")
+        
+        #self.dock_content.layout().insertWidget(1, self._showhidebutton)
+        #self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
+        #self.dock_content.layout().insertWidget(3, self.toolbarButton)
+        
         self.dock_content.layout().insertWidget(1, self._showhidebutton)
         self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
-        self.dock_content.layout().insertWidget(3, self.toolbarButton)
+        self.dock_content.layout().insertWidget(3, separator)
+        self.dock_content.layout().insertWidget(4, self.toolbarButton)
         
         self._showhidebutton.clicked.connect(self.showhidePanel)
         # self._showhidebutton.move(10,10)
@@ -166,7 +180,6 @@ class RFViewerHomeWidget(RFViewerWidget):
         else:
             self._configureToolbarPanoramaSection() 
         # self._configureToolbarPanoramaSection()     
-
     # self._configureToolbarExportSection()
     #    self._configureUndoSection()
 
@@ -202,8 +215,8 @@ class RFViewerHomeWidget(RFViewerWidget):
         return int(s) if s else 0
     def showhidePanel(self):
         if self.tmpflag_showhidebtn == 1:
-            self._showhidebutton.move(30,20)
-            self.dock_content.setMaximumWidth(80)
+        	#---レイアウト変更--- 20221227 koyanagi
+            self.dock_content.setMaximumWidth(40)
             self._moduleWidget1.hide()
             self._moduleWidget.hide()
             self._patientInfoWidget.hide()
@@ -213,15 +226,16 @@ class RFViewerHomeWidget(RFViewerWidget):
             self._showhidebutton.setIcon(Icons.leftarrow)
             self._showhidebutton.setIconSize(qt.QSize(10,10))
         else:
-            self._showhidebutton.move(30,20)
+        	#---レイアウト変更--- 20221227 koyanagi
             self.tmpflag_showhidebtn = 1
-            self.dock_content.setMaximumWidth(1050)
+            self.dock_content.setMaximumWidth(800)
             self._moduleWidget1.show()
             self._moduleWidget.show()
             self._patientInfoWidget.show()
             self.toolbarButton.show()
-            self._showhidebutton.setText("ツールバー非表示")
-            self._showhidebutton.setIcon(qt.QIcon())
+            self._showhidebutton.setText("")
+            self._showhidebutton.setIcon(Icons.rightarrow)
+            self._showhidebutton.setIconSize(qt.QSize(10,10))
     def Average(self, lst): 
         return sum(lst) / len(lst) 
     def _loadCommandLineFiles(self):
@@ -241,6 +255,13 @@ class RFViewerHomeWidget(RFViewerWidget):
             if file.endswith(".mrb") or file.endswith(".mhd"):
                 self.onLoadData(file)
                 return
+        
+        #RF20220512_yori コマンドから画像開く際は、上でreturnされずここを通る.
+        #                その際、iniから現在開いている画像のパスを取得して患者情報読み込む.
+        file2 = qt.QSettings().value("ExportDirectory") + "/RFViewerSession.mrb"
+        if file2:
+            self.onLoadData(file2)
+        #RF20220512_end
 
     def _instantiateModuleWidgets(self):
         self._visualizationWidget = slicer.util.getModuleGui(slicer.modules.rfvisualization)
@@ -300,18 +321,31 @@ class RFViewerHomeWidget(RFViewerWidget):
             volx = self.makeInt(mnri_settings.value("BackProjection/VolXDim"))
             if volx > 0:
                 qt.QSettings().setValue("volx", volx)
-            patientId = mnri_settings.value("DicomPatientInfo/PatientId")
+            #RF20220512_yori ID7桁対策. 下記関数はRFReconstruction.py内に追加済みのもの.
+            patientId = mnri_settings.IDvalue("DicomPatientInfo/PatientId")
+            #RF20220512_else
+            #patientId = mnri_settings.value("DicomPatientInfo/PatientId")
+            #RF20220512_end
             self.setPatientId(patientId)
             # self.ui.raycastSelector.setCurrentIndex(0)
 
             patientName = mnri_settings.value("DicomPatientInfo/PatientName")
             patientSex = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientSex"))
+            #RF20220512_yori 日本語で.
             if patientSex == 1:
-                patientSexStr = "Male"
+                patientSexStr = "男性"
             elif patientSex == -1:
-                patientSexStr = "Female"
+                patientSexStr = "女性"
             else:
-                patientSexStr = "Unknown"
+                patientSexStr = ""           
+            #RF20220512_else
+            #if patientSex == 1:
+            #    patientSexStr = "Male"
+            #elif patientSex == -1:
+            #    patientSexStr = "Female"
+            #else:
+            #    patientSexStr = "Unknown"
+            #RF20220512_end
             y = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthYear"))
             m = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthMonth"))
             d = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthDate"))
@@ -322,11 +356,22 @@ class RFViewerHomeWidget(RFViewerWidget):
             datetime = qt.QDate.currentDate()
             strnow = datetime.toString(qt.Qt.ISODate)
             strnow = strnow.replace("-",".")
-            tmpstr = str(patientId) + " /" + patientName + " /" + patientSexStr + " /" +BithdayDate + " /" +strnow
-            if IndustryTypeValue == "Industrial":      
-                self._patientInfoWidget.setText(str(patientId) + " /" + strnow)
+            #RF20220512_yori 項目名追記＋今日の日付は無しで.
+            tmpstr = ""
+            if IndustryTypeValue == "Industrial":
+                tmpstr = "ID: " + str(patientId) + " / 品名: " + patientName
             else:
-                self._patientInfoWidget.setText(tmpstr)
+            	#---レイアウト変更--- 20221227 koyanagi
+                tmpstr = "ID:" + str(patientId) + " /名前:" + patientName + " /性別:" + patientSexStr + " /生年月日:" +BithdayDate
+                #tmpstr = "患者ID: " + str(patientId) + " / 患者名: " + patientName + " / 性別: " + patientSexStr + " / 生年月日: " +BithdayDate
+            self._patientInfoWidget.setText(tmpstr)
+            #RF20220512_else
+            #tmpstr = str(patientId) + " /" + patientName + " /" + patientSexStr + " /" +BithdayDate + " /" +strnow
+            #if IndustryTypeValue == "Industrial":      
+            #    self._patientInfoWidget.setText(str(patientId) + " /" + strnow)
+            #else:
+            #    self._patientInfoWidget.setText(tmpstr)
+            #RF20220512_end
         except:
             self._patientInfoWidget.setText("")
             qt.QSettings().setValue("WindowCenter", 3400)
@@ -369,14 +414,6 @@ class RFViewerHomeWidget(RFViewerWidget):
         AllResetButton.setIcon(Icons.AllReset)
         self._toolbarWidget.addButton(AllResetButton)
 
-        DebuggerAttachButton = createButton("", self.DebuggerAttach)
-        DebuggerAttachButton.setIcon(Icons.rightarrow)
-        self._toolbarWidget.addButton(DebuggerAttachButton)
-
-        CaptureTestButton = createButton("", self.CaptureTest)
-        CaptureTestButton.setIcon(Icons.rightarrow)
-        self._toolbarWidget.addButton(CaptureTestButton)
-
     def _configureToolbarAnnotationSection(self):
         self._toolbarWidget.createSection(self.tr("Measuring Instruments"))
         # self._toolbarWidget.addButton(createButton(self.tr("Measuring Instruments"), self.loadAnnotationModule))
@@ -398,9 +435,9 @@ class RFViewerHomeWidget(RFViewerWidget):
         implantToolButton.setIcon(Icons.implantTool)
         self._toolbarWidget.addButton(implantToolButton) 
 
-        panoramaToolButton = createButton("", self.loadPanoramaModule)
-        panoramaToolButton.setIcon(Icons.PanoramaDisplay)
-        self._toolbarWidget.addButton(panoramaToolButton) 
+        # panoramaToolButton = createButton("", self.loadPanoramaModule)
+        # panoramaToolButton.setIcon(Icons.PanoramaDisplay)
+        # self._toolbarWidget.addButton(panoramaToolButton) 
        
         AnnotationLineButton = createButton("", self.loadAnnotationLineModule)
         AnnotationLineButton.setIcon(Icons.AnnotationLine)
@@ -469,87 +506,6 @@ class RFViewerHomeWidget(RFViewerWidget):
         self._currentWidget.onModuleOpened()
         self._currentWidget.DVDexportButton.click()
     
-    def CaptureTest(self):
-        lm = slicer.app.layoutManager()
-        # switch on the type to get the requested window
-        widget = 0
-        # reset the type so that the node is set correctly
-        type = slicer.qMRMLScreenShotDialog.FullLayout
-
-        if type == slicer.qMRMLScreenShotDialog.FullLayout:
-            # full layout
-            widget = lm.viewport()
-        elif type == slicer.qMRMLScreenShotDialog.ThreeD:
-            # just the 3D window
-            widget = lm.threeDWidget(0).threeDView()
-        elif type == slicer.qMRMLScreenShotDialog.Red:
-            # red slice window
-            widget = lm.sliceWidget("Red")
-        elif type == slicer.qMRMLScreenShotDialog.Yellow:
-            # yellow slice window
-            widget = lm.sliceWidget("Yellow")
-        elif type == slicer.qMRMLScreenShotDialog.Green:
-            # green slice window
-            widget = lm.sliceWidget("Green")
-        else:
-            # default to using the full window
-            widget = slicer.util.mainWindow()
-
-        # grab and convert to vtk image data
-        qimage = ctk.ctkWidgetsUtils.grabWidget(widget)
-        imageData = vtk.vtkImageData()
-        slicer.qMRMLUtils().qImageToVtkImageData(qimage,imageData)
-
-        # annotationLogic = slicer.modules.annotations.logic()
-        # name = "hoge"
-        # description = "fugafuga"
-        # filePath = "C:\Users\yyyyy/hoge.png"
-        # annotationLogic.CreateSnapShot(name, description, type, 1.0, imageData)
-
-        # type = slicer.qMRMLScreenShotDialog.FullLayout
-
-        # snapshotNode = slicer.util.getNode(name)
-        
-        # if not snapshotNode:
-        #     print("Can't get snapshotNode")
-        #     return
-        
-        # if not slicer.util.saveNode(snapshotNode, filePath):
-        #     print("Can't save " + filePath)
-        #     return
-
-        msg = qt.QMessageBox()
-        msg.setIcon(qt.QMessageBox.Information)
-
-        msg.setText("Captureしました。")
- 
-        pButtonYes = msg.addButton("はい", qt.QMessageBox.YesRole)
-        msg.addButton("キャンセル", qt.QMessageBox.NoRole)
-        msg.exec_()
-
-
-    def DebuggerAttach(self):
-        msg = qt.QMessageBox()
-        msg.setIcon(qt.QMessageBox.Information)
-
-        msg.setText("DebuggerのAttachをwaitします。")
-        msg.setInformativeText("よろしいですか？")
- 
-        pButtonYes = msg.addButton("はい", qt.QMessageBox.YesRole)
-        msg.addButton("キャンセル", qt.QMessageBox.NoRole)
-        msg.exec_()
-
-        if msg.clickedButton() == pButtonYes:
-            import ptvsd 
-            ptvsd.enable_attach()
-            ptvsd.wait_for_attach()
-
-            msgAttached = qt.QMessageBox()
-            msgAttached.setIcon(qt.QMessageBox.Information)
-            msgAttached.setText("Debugger Attached!!")
-            msg.addButton("OK", qt.QMessageBox.NoRole)
-            msgAttached.exec_()
- 
     def AllResetModule(self):
         
         msg = qt.QMessageBox()

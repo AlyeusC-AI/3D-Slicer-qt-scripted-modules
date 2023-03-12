@@ -22,16 +22,18 @@ class RFVisualizationUI(qt.QWidget):
     qt.QWidget.__init__(self)
 
     self._layout = qt.QFormLayout()
-    self._layout.setMargin(10)
-    self._layout.setVerticalSpacing(15)
-    self.spacing = 7
+    #---レイアウト変更--- 20221227 koyanagi
+    # スペース削減とレイアウト順変更
+    self._layout.setMargin(3)#マージン削減
+    self._layout.setVerticalSpacing(3)#スペース削減
+    self.spacing = 0 #スペース削減
     self.industry = industryType
     self.isCephalo = False
     self.addLayoutSection()
-    self.addCropSection()
     self.add3DSection(vrLogic, preset)
-    self.addIntermediateSection()
     self.add2DSection()
+    self.addCropSection()
+    self.addIntermediateSection()
     self.addMagnificationSection()
     self.addAdvancedSection()
 
@@ -105,156 +107,222 @@ class RFVisualizationUI(qt.QWidget):
   def addLayoutSection(self):
     self.layoutSection = qt.QFormLayout()
     self.setLayoutSpacing(self.layoutSection)
-
+    #---レイアウト変更--- 20221227 koyanagi
+    self.layoutSection.setVerticalSpacing(2)
+    self.layoutSection.setHorizontalSpacing(0)
+    
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("レイアウト")))#self.tr("Layout: ")
     self.layoutSelector = self.createLayoutComboBox()
-    self.layoutSection.addRow(self.tr("Layout: "), self.layoutSelector)
-    self._layout.addRow(self.layoutSection)
+    layoutPre.addWidget(self.layoutSelector)
+    self._layout.addRow(layoutPre)
 
-#ここでUICropBoxのUI作っている
-  def addCropSection(self):
-    self.volumeRenderingWidget = slicer.util.getNewModuleGui(slicer.modules.volumerendering)
-    self._volumeSelector = slicer.util.findChild(self.volumeRenderingWidget, "VolumeNodeComboBox")
+  def add3DSection(self, vrLogic, preset):
+    self.layout3D = qt.QFormLayout()
+    self.setLayoutSpacing(self.layout3D)
+    #---レイアウト変更--- 20221227 koyanagi
+    self.layout3D.setVerticalSpacing(2)
+    self.layout3D.setHorizontalSpacing(0)
 
-    self._cropCheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropCheckBox")
-    self._cropCheckBox.text = self.tr("Enabled")
-
-    self.displayROICheckBox = qt.QCheckBox()
-    self.displayROICheckBox.text = self.tr("Display ROI")
-
-    self._ROIFitPushButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
-    self._fitToVolumeButton = createButton(self.tr("Fit to Volume"), self.fitToVolumeButton)
-
-    layout = qt.QHBoxLayout()
-    # layout.addWidget(qt.QLabel(self.tr("Crop:")))
-    # layout.addWidget(self._cropCheckBox)
-
-    #「クリッピングを表示する」チェックボックス
-    layout.addWidget(self.displayROICheckBox)
-
-    #「初期値に戻す」ボタン
-    layout.addWidget(self._fitToVolumeButton)
-
-    self._layout.addRow(layout)
+    #ライン挿入
+    self.layout3D.addRow(self._createSeparator())
+  	#3Dプリセットのレイアウト
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("３Ｄ")))
+    layoutPre.addWidget(self._createLabel(self.tr("プリセット")))#self.tr("Presets 3D: ")
+    self.preset3DSelector = self.createPresetComboBox(vrLogic, preset)
+    layoutPre.addWidget(self.preset3DSelector)
+    self.layout3D.addRow(layoutPre)
+    
+  	#3Dレベルのレイアウト
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("")))
+    layoutPre.addWidget(self._createLabel(self.tr("レベル"))) #self.tr("Threshold VR: ")
+    self.shiftSlider = self.createShiftPresetSlider()
+    layoutPre.addWidget(self.shiftSlider)
+    self.layout3D.addRow(layoutPre)
+    
+    #未使用
+    self.colorSelector = self.createLookupTableComboBox()
+    # self.layout3D.addRow(self.tr("Color Presets: "), self.colorSelector)
+    self.vrModeSelector = self.createVolumeRenderingModeComboBox()
+    # self.layout3D.addRow(self.tr("VR Mode: "), self.vrModeSelector)
+    
+    self._layout.addRow(self.layout3D)
 
   def add2DSection(self):
     self.layout2D = qt.QFormLayout()
     self.setLayoutSpacing(self.layout2D)
-
+    #---レイアウト変更--- 20221227 koyanagi
+    self.layout2D.setSpacing(2)
+    self.layout2D.setVerticalSpacing(2)
+    self.layout2D.setHorizontalSpacing(0)
+    
+    #ライン挿入
+    self.layout2D.addRow(self._createSeparator())
+  	#2Dレベルのレイアウト
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("２Ｄ")),0,0x20) #上寄せ
+    layoutPre.addWidget(self._createLabel(self.tr("レベル")),0,0x20) #上寄せ self.tr("2D Window/Level: ")
+    self.windowLevelWidget = self.createWindowLevelWidget()
+    layoutPre.addWidget(self.windowLevelWidget)
+    self.layout2D.addRow(layoutPre)
+    
+    #ライン挿入
+    self.layout2D.addRow(self._createSeparator())
+  	#断層厚のレイアウト１段目　厚み表示　断層厚のスライダー　コンボボックス
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("断層厚")))#self.tr("MIP thickness: ")
+    self.thicknessText = qt.QLabel() #厚み表示
+    self.thicknessText.setStyleSheet("QLabel {min-width: 50px; max-width: 50px;}")
+    layoutPre.addWidget(self.thicknessText)
+    self.slabThicknessSlider = self.createSlabThicknessSlider() #断層厚のスライダー
+    layoutPre.addWidget(self.slabThicknessSlider)
+    self.thicknessSelector = self.createMIPThicknessCombobox() #厚さのコンボボックス
+    layoutPre.addWidget(self.thicknessSelector)
+    self.layout2D.addRow(layoutPre)
+    
+  	#断層厚のレイアウト２段目
+    layoutPre = qt.QHBoxLayout()
+    
+    layoutPre.addWidget(self._createLabel(self.tr("投影法")))
+    self.raycastSelector = self.createRaycastCombobox()#レイキャストコンボボックス
+    layoutPre.addWidget(self.raycastSelector,0,1)
+    
+    self.fractionCheckBox = qt.QCheckBox(self.tr("間引処理"))
+    self.fractionCheckBox.setToolTip(self.tr("間引き表示の切り替え"))
+    layoutPre.addWidget(self.fractionCheckBox)
+    toggleCheckBox(self.fractionCheckBox, lastCheckedState=False)
+    
+    layoutPre.addWidget(qt.QLabel("")) #位置合わせにスペース追加
+    layoutPre.addWidget(self._createLabel(self.tr(""))) #位置合わせにスペース追加
+    self.layout2D.addRow(layoutPre)
+    
+    #未使用
     self.preset2DSelector = self.create2DPresetComboBox()
     # self.layout2D.addRow(self.tr("Presets 2D: "), self.preset2DSelector)
-
-    self.windowLevelWidget = self.createWindowLevelWidget()
-    self.layout2D.addRow(self.tr("2D Window/Level: "), self.windowLevelWidget)
-
-    self.slabThicknessSlider = self.createSlabThicknessSlider()
-
-    layoutMIP = qt.QFormLayout()
-    layoutMIP.addRow( self.slabThicknessSlider)
-
-    layout3Buttons = qt.QHBoxLayout()
-    layout3Buttons.setSpacing(5)#####
-    #20220804_Koyanagi
-    #self.setMIPThick2Button = createButton(self.tr("2"), self.setMIPThickness2Button)
-    #layout3Buttons.addWidget(self.setMIPThick2Button)
-
-    #self.setMIPThick5Button = createButton(self.tr("5"), self.setMIPThickness5Button)
-    # layout3Buttons.addWidget(createButton(self.tr("5"), self.setMIPThickness5Button))
-    #layout3Buttons.addWidget(self.setMIPThick5Button)
-    #ayout3Buttons.addWidget(createButton(self.tr("10"), self.setMIPThickness10Button))
-    #20220804_Koyanagi
-
-    self.thicknessText = qt.QLabel()
-    layout3Buttons.addWidget(self.thicknessText)
-
-
-    self.thicknessSelector = self.createMIPThicknessCombobox()
-    layout3Buttons.addWidget(self.thicknessSelector)
-    layoutMIP.addRow(layout3Buttons)
-    self.layout2D.addRow(self.tr("MIP thickness: "), layoutMIP)
+    
     self._layout.addRow(self.layout2D)
 
-  #--- for cephalometric 20220924 koyanagi --- replacement
+#ここでUICropBoxのUI作っている
+  def addCropSection(self):
+    #---レイアウト変更--- 20221227 koyanagi
+    self.layoutCB = qt.QFormLayout()
+    self.setLayoutSpacing(self.layoutCB)
+    self.layoutCB.setVerticalSpacing(2)
+    self.layoutCB.setHorizontalSpacing(0)
+
+    #ライン挿入
+    self.layoutCB.addRow(self._createSeparator())
+    
+  	#断層軸のチェックボックス
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("表示")))
+    self.displayResliceCursorCheckbox = qt.QCheckBox(self.tr("断層軸"))
+    layoutPre.addWidget(self.displayResliceCursorCheckbox)
+    
+    #スペース追加
+    #layoutPre.addSpacing(10)
+    
+    self.displayROICheckBox = qt.QCheckBox(self.tr("ｸﾘｯﾋﾟﾝｸﾞ"))#self.tr("Display ROI")
+    layoutPre.addWidget(self.displayROICheckBox)
+    #スペース追加
+    #layoutPre.addSpacing(10)
+    self._fitToVolumeButton = qt.QPushButton(self.tr("リセット"))#self.tr("Fit to Volume")
+    self._fitToVolumeButton.setToolTip(self.tr("クリップボックスの初期化"))
+    self._fitToVolumeButton.setStyleSheet("QPushButton {margin: 1px;  min-width: 12px; padding-top: 3px; padding-bottom: 3px; padding-right: 1px; padding-left: 1px; spacing: 0;}")
+    self._fitToVolumeButton.connect("clicked(bool)", self.fitToVolumeButton)
+    layoutPre.addWidget(self._fitToVolumeButton)
+    layoutPre.addWidget(self._createLabel(self.tr("　　　　"))) #位置合わせにスペース追加
+    self.layoutCB.addRow(layoutPre)
+    
+    self._layout.addRow(self.layoutCB)
+    
+    self.volumeRenderingWidget = slicer.util.getNewModuleGui(slicer.modules.volumerendering)
+    self._volumeSelector = slicer.util.findChild(self.volumeRenderingWidget, "VolumeNodeComboBox")
+    
+    self._cropCheckBox = slicer.util.findChild(self.volumeRenderingWidget, "ROICropCheckBox")
+    self._cropCheckBox.text = self.tr("Enabled")
+    
+    self._ROIFitPushButton = slicer.util.findChild(self.volumeRenderingWidget, "ROIFitPushButton")
+    
+    #未使用
+    self.synchronizeCheckbox = qt.QCheckBox()
+    # self.layoutIntermediate.addRow(self.tr("Synchronize 2D/3D colors: "), self.synchronizeCheckbox)
+    # layout.addWidget(qt.QLabel(self.tr("Crop:")))
+    # layout.addWidget(self._cropCheckBox)
+    #self._layout.addRow(layout)
+
+
   def addMagnificationSection(self):
-  	# Modified for Cephalometric
-    """
-    self.layoutMagnification = qt.QFormLayout()
-    self.setLayoutSpacing(self.layoutMagnification)
-
-    layoutButtons = qt.QHBoxLayout()
-    layoutButtons.setSpacing(20);
-    # self.cephalometricButton = createButton(self.tr("Cephalometric"), self.setCephalometric)　 ←コメントアウト
-    # layoutButtons.addWidget(self.cephalometricButton)　　　　　　　　　　　　　　　　　　　　　←コメントアウト
-    # layoutButtons.addWidget(createButton(self.tr("Size of 1:1"), self.clearCephalometric))　　 ←コメントアウト
-
-    layoutButtons.addWidget(qt.QLabel(self.tr("MIP RayCast: ")))
-    self.raycastSelector = self.createRaycastCombobox()
-    layoutButtons.addWidget(self.raycastSelector)
-
-    self.setMIPThickness5Button()   # default thickness as 5, must be called after raycastSelector initialized
-
-    self.layoutMagnification.addRow(self.tr("Magnification: "), layoutButtons)
-
-    self._layout.addRow(self.layoutMagnification)
-    """
+    #---レイアウト変更--- 20221227 koyanagi
     # Layout of Cephalometric Tools for cephalometric
     self.layoutMagnification = qt.QFormLayout()
     self.setLayoutSpacing(self.layoutMagnification)
-
-    #一段目　マーカー・ルーラー・投影設定をレイアウト
-    layoutButtons = qt.QHBoxLayout()
-    layoutButtons.setSpacing(0)
-    
-    #マーカーとルーラーの表示・非表示　テキストを右型にレイアウト　一旦日本語で対応
-    layoutButtons.setSpacing(0)
-    layoutButtons.addWidget(qt.QLabel(self.tr("マーカー")),0,2)#右寄せ
-    self.OrientationMarkerCheckBox = qt.QCheckBox(self.tr(""))
+    self.layoutMagnification.setVerticalSpacing(2)
+    self.layoutMagnification.setHorizontalSpacing(0)
+    #ライン挿入
+    self.layoutMagnification.addRow(self.layoutMagnification.setHorizontalSpacing(50), self._createSeparator())
+  	#マーカーのチェックボックス
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("")))
+    self.OrientationMarkerCheckBox = qt.QCheckBox(self.tr("マーカー"))
     self.OrientationMarkerCheckBox.setToolTip(self.tr("マーカーの表示・非表示設定"))
-    layoutButtons.addWidget(self.OrientationMarkerCheckBox)
     toggleCheckBox(self.OrientationMarkerCheckBox, lastCheckedState=True)
-
-    layoutButtons.addWidget(qt.QLabel(self.tr("ルーラー")),0,2)#右寄せ
-    self.rulerCheckBox = qt.QCheckBox(self.tr(""))
+    layoutPre.addWidget(self.OrientationMarkerCheckBox)
+    
+  	#ルーラーのチェックボックス
+    self.rulerCheckBox = qt.QCheckBox(self.tr("ルーラー"))
     self.rulerCheckBox.setToolTip(self.tr("ルーラーの表示・非表示設定"))
-    layoutButtons.addWidget(self.rulerCheckBox)
     toggleCheckBox(self.rulerCheckBox, lastCheckedState=True)
-
-    #投影方法のコンボボックス　右寄せでレイアウト　一旦日本語で対応
-    layoutButtons.addWidget(qt.QLabel(self.tr("投影方法")),0,2)#右寄せ
-    self.raycastSelector = self.createRaycastCombobox()
-    layoutButtons.addWidget(self.raycastSelector)
-
-    #２段目　セファロ補正値　レイアウト
-    layoutFOV = qt.QHBoxLayout()
-    layoutFOV.setSpacing(0)
-    #セファロ補正値のコンボボックス　右寄せでレイアウト　一旦日本語で対応
-    #layoutFOV.addWidget(qt.QLabel(self.tr("")))#空文字　サイズ合わせ
-
-    #--- for cephalometric & Speed up 20220924 koyanagi --- add
-    #間引き
-    layoutFOV.addWidget(qt.QLabel(self.tr("間引き化")),0,2)#右寄せ
-    self.fractionCheckBox = qt.QCheckBox(self.tr(""))
-    self.fractionCheckBox.setToolTip(self.tr("間引き表示の切り替え"))
-    layoutFOV.addWidget(self.fractionCheckBox)
-    toggleCheckBox(self.fractionCheckBox, lastCheckedState=False)
-    #-------------------------------------------
-    layoutFOV.addWidget(qt.QLabel(self.tr("")))#空文字　サイズ合わせ
-    layoutFOV.addWidget(qt.QLabel(self.tr("セファロ補正値")),1,2)
+    layoutPre.addWidget(self.rulerCheckBox)
+    
+    #セファロ補正値
+    layoutPre.addWidget(self._createLabel(self.tr("拡大値")))
     self.FOVSelector = self.createFOVCombobox()
-    layoutFOV.addWidget(self.FOVSelector)
+    layoutPre.addWidget(self.FOVSelector)
     
     #レイアウト
-    self.layoutMagnification.addRow(self.tr("表示・投影設定   "), layoutButtons)
-    self.layoutMagnification.addRow(self.tr(""),layoutFOV)#空文字　サイズ合わせ
+    self.layoutMagnification.addRow(layoutPre)
     self._layout.addRow(self.layoutMagnification)
     
     #元ソースのなごり　一旦残し
     self.setMIPThickness5Button()   # default thickness as 5, must be called after raycastSelector initialized
-  #-------------------------------------------
+    #---- 断層厚の厚さ修正　20221021 ---
+    #初期値設定
+    self.slabThicknessSlider.setValue(0.5)
+    self.setMIPThickness(5)
+    
 
-  #--- for cephalometric 20220924 koyanagi --- replacement
   def setMIPThickness(self, thickness):
-    self.thicknessText.setText(str(thickness) + " mm")
-
+    #--- 断層厚の厚さ修正--- 20221227 
+    #ボクセルピッチの取得　X軸のピッチを使用
+    volumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
+    if not volumeNode:
+      volume_spacing = (0.1, 0.1, 0.1)
+    else:
+      volume_spacing = volumeNode.GetSpacing()
+    
+    #mm変換
+    mm_convert = (volume_spacing[0] * thickness)#スライドバーはボクセル数単位の為、ｍｍ変換
+    
+    #スライス厚の表示
+    self.thicknessText.setText((f'{mm_convert:.1f}')+ " mm")#小数点１位まで表示
+    
+    #間引き化のチェックボックス確認
+    if self.fractionCheckBox.isChecked():
+      Fraction = 7 #間引き割合　ｎ枚に１枚
+    else:
+      Fraction = 1
+    
+    #スライス数変換
+    NumberOfSlices = thickness/Fraction #ボクセル数からスライス数を変換
+    if NumberOfSlices < 1:#最小値を１枚に設定
+      NumberOfSlices = 1
+    else:
+      NumberOfSlices = NumberOfSlices + 1
+    
+    #投影方法の反映とスライスの反映
     sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
     data = self.raycastSelector.currentData
     mode = vtk.VTK_IMAGE_SLAB_MAX
@@ -264,22 +332,13 @@ class RFVisualizationUI(qt.QWidget):
       mode = vtk.VTK_IMAGE_SLAB_MEAN
     else:
       mode = vtk.VTK_IMAGE_SLAB_MIN
-    #--- for cephalometric & Speed up 20220924 koyanagi --- add
-    if self.fractionCheckBox.isChecked():
-      Fraction = 5
-    else:
-      Fraction = 1
-    #-------------------------------------------
+    
     for slice in sliceNodes:
-      slice.SetSlabMode(mode)
-      #--- for cephalometric & Speed up 20220924 koyanagi --- replacement
-      #slice.SetSlabNumberOfSlices(thickness)
-      #slice.SetMipThickness(thickness/Fraction)
-      slice.SetSlabNumberOfSlices(int(thickness/Fraction))
-      slice.SetMipThickness(int(thickness/Fraction))
-      #-------------------------------------------
+      slice.SetSlabMode(mode)#投影方法
+      slice.SetSlabNumberOfSlices(int(NumberOfSlices))#枚数入力
+      slice.SetMipThickness(int(mm_convert))#mm入力
       slice.Modified()
-  #-------------------------------------------
+    
 
   def fitToVolumeButton(self):
     # 変形は全てtransformで実施。ROIはtransformされるだけなのでtransformを初期化すればOK。
@@ -361,25 +420,11 @@ class RFVisualizationUI(qt.QWidget):
 
     self.toggleCephalometric(1, 0)
 
-  def add3DSection(self, vrLogic, preset):
-    self.layout3D = qt.QFormLayout()
-    self.setLayoutSpacing(self.layout3D)
 
-    self.preset3DSelector = self.createPresetComboBox(vrLogic, preset)
-    self.layout3D.addRow(self.tr("Presets 3D: "), self.preset3DSelector)
-
-    self.shiftSlider = self.createShiftPresetSlider()
-    self.layout3D.addRow(self.tr("Threshold VR: "), self.shiftSlider)
-
-    self.colorSelector = self.createLookupTableComboBox()
-    # self.layout3D.addRow(self.tr("Color Presets: "), self.colorSelector)
-
-    self.vrModeSelector = self.createVolumeRenderingModeComboBox()
-    # self.layout3D.addRow(self.tr("VR Mode: "), self.vrModeSelector)
-
-    self._layout.addRow(self.layout3D)
 
   def addIntermediateSection(self):
+    #---レイアウト変更--- 20221227 koyanagi
+    """
     self.layoutIntermediate = qt.QFormLayout()
     self.setLayoutSpacing(self.layoutIntermediate)
 
@@ -390,6 +435,7 @@ class RFVisualizationUI(qt.QWidget):
     self.layoutIntermediate.addRow(self.tr("Show MPR: "), self.displayResliceCursorCheckbox)
 
     self._layout.addRow(self.layoutIntermediate)
+    """
 
   def addAdvancedSection(self):
     self.layoutAdvanced = qt.QFormLayout()
@@ -409,7 +455,7 @@ class RFVisualizationUI(qt.QWidget):
     self.scalarMappingWidget = slicer.qMRMLVolumePropertyNodeWidget()
     parametersFormLayoutAdvanced.addWidget(self.scalarMappingWidget)
 
-    self._layout.addRow(self.layoutAdvanced)
+    #self._layout.addRow(self.layoutAdvanced)
 
   def setLayoutSpacing(self, layout):
     layout.setHorizontalSpacing(self.spacing)
@@ -436,8 +482,8 @@ class RFVisualizationUI(qt.QWidget):
     # selector.addItem(self.tr("Triple 3D"), RFLayoutType.RFTriple3D)
     selector.addItem(self.tr("3D Only"), RFLayoutType.RF3DOnly)
     selector.addItem(self.tr("Line Profile"), RFLayoutType.RFLineProfileLayout)
-    selector.addItem(self.tr("Panorama"), RFLayoutType.RFPanoramaLayout)
-    selector.addItem(self.tr("Axial Only"), RFLayoutType.RFAxialOnly)
+    #selector.addItem(self.tr("Panorama"), RFLayoutType.RFPanoramaLayout)
+    #selector.addItem(self.tr("Axial Only"), RFLayoutType.RFAxialOnly)
     # selector.addItem(self.tr("2 x 2"), RFLayoutType.RF2X2Layout)
     # selector.addItem(self.tr("3 x 3"), RFLayoutType.RF3X3Layout)
     # selector.addItem(self.tr("4 x 4"), RFLayoutType.RF4X4Layout)
@@ -446,6 +492,10 @@ class RFVisualizationUI(qt.QWidget):
     # selector.addItem(self.tr("7 x 7"), RFLayoutType.RF7X7Layout)
     # selector.addItem(self.tr("8 x 8"), RFLayoutType.RF8X8Layout)
     selector.setCurrentText(self.tr("Main 3D"))
+    #---レイアウト変更--- 20221227 koyanagi
+    selector.setStyleSheet("""
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}
+    	""")#レイアウト変更
     return selector
 
   def createPresetComboBox(self, vrLogic, currentPreset):
@@ -474,6 +524,10 @@ class RFVisualizationUI(qt.QWidget):
     selector.setMRMLScene(vrLogic.GetPresetsScene())
     selector.showIcons = False
     selector.setCurrentNode(currentPreset)
+    #---レイアウト変更--- 20221227 koyanagi
+    selector.setStyleSheet("""
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}
+    	""")#レイアウト変更
     return selector
 
   def create2DPresetComboBox(self):
@@ -580,25 +634,28 @@ class RFVisualizationUI(qt.QWidget):
     """
     Create a combobox to choose the thickness of the MIP
     """
+    #---レイアウト変更--- 20221227 koyanagi
+    #実際の値にあっていなかった為、修正
     selector = qt.QComboBox()
     selector.setToolTip(self.tr("Select the thickness of MIP (xx mm)"))
-    #20220804_Koyanagi
-    selector.addItem(self.tr("2 mm"), 2)
-    selector.addItem(self.tr("5 mm"), 5)
-    selector.addItem(self.tr("10 mm"), 10)
-    #20220804_Koyanagi
-    selector.addItem(self.tr("80 mm"), 80)
-    selector.addItem(self.tr("90 mm"), 90)
-    selector.addItem(self.tr("100 mm"), 100)
-    selector.addItem(self.tr("110 mm"), 110)
-    selector.addItem(self.tr("120 mm"), 120)
-    selector.addItem(self.tr("130 mm"), 130)
-    selector.addItem(self.tr("140 mm"), 140)
-    selector.addItem(self.tr("150 mm"), 150)
-    selector.addItem(self.tr("160 mm"), 160)
-    selector.addItem(self.tr("170 mm"), 170)
-    selector.addItem(self.tr("180 mm"), 180)
-    selector.setCurrentText(self.tr("80 mm"))
+    selector.addItem(self.tr("0.2mm"), 0.2)
+    selector.addItem(self.tr("0.5mm"), 0.5)
+    selector.addItem(self.tr("1mm"), 1)
+    selector.addItem(self.tr("5mm"), 5)
+    selector.addItem(self.tr("10mm"), 10)
+    selector.addItem(self.tr("80mm"), 80)
+    selector.addItem(self.tr("100mm"), 100)
+    selector.addItem(self.tr("120mm"), 120)
+    selector.addItem(self.tr("140mm"), 140)
+    selector.addItem(self.tr("160mm"), 160)
+    selector.addItem(self.tr("180mm"), 180)
+    selector.setCurrentText(self.tr("80mm"))
+    #selector.setStyleSheet("""
+    #    QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 60px; min-width: 60px;}
+    #    QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}""")#レイアウト変更
+    selector.setStyleSheet("""
+        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
     return selector
 
   #--- for cephalometric 20220924 koyanagi --- replacement
@@ -606,13 +663,17 @@ class RFVisualizationUI(qt.QWidget):
     """
     Create a combobox to choose the thickness of the MIP
     """
+    #---レイアウト変更--- 20221227 koyanagi
     selector = qt.QComboBox()
     #selector.setToolTip(self.tr("Select the Raycast mode")) #一旦日本語で対応
-    selector.setToolTip(self.tr("断層画像の投影方法選択\n通常：Ray Max"))
-    selector.addItem(self.tr("Ray Max"), 1)
-    selector.addItem(self.tr("Ray Mean"), 2)
-    selector.addItem(self.tr("Ray Min"), 3)
-    selector.setCurrentText(self.tr("Ray Max"))
+    selector.setToolTip(self.tr("断層画像の投影方法選択\n通常：Max"))
+    selector.addItem(self.tr("Max"), 1)
+    selector.addItem(self.tr("Mean"), 2)
+    selector.addItem(self.tr("Min"), 3)
+    selector.setCurrentText(self.tr("Max"))
+    selector.setStyleSheet("""
+        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 60px; min-width: 60px; spacing-right: 0;}
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}""")#レイアウト変更
     return selector
   #-------------------------------------------
 
@@ -622,6 +683,7 @@ class RFVisualizationUI(qt.QWidget):
     """
     Create a combobox to choose the FOV for cephalometric for cephalometric magnification correction
     """
+    #---レイアウト変更--- 20221227 koyanagi
     selector = qt.QComboBox()
     #selector.setToolTip(self.tr("Select the FOV")) #一旦日本語で対応
     selector.setToolTip(self.tr("セファロ用の補正値選択"))
@@ -629,8 +691,27 @@ class RFVisualizationUI(qt.QWidget):
     for num in range(100, 400, 5): #レンジは確認後に修正
       selector.addItem(str(num), num)
     selector.setCurrentText(self.tr(""))
+    selector.setStyleSheet("""
+        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; width: 35px;}
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}
+    	""")#レイアウト変更
     return selector
   #-------------------------------------------
+
+  #---レイアウト変更--- 20221227 koyanagi
+  #---レイアウト用　素材　------------------------------
+  def _createSeparator(self):#RFVisualizationUI用のセパレーター
+    separator = qt.QFrame()
+    separator.setFrameShape(qt.QFrame.HLine)
+    separator.setFrameShadow(qt.QFrame.Sunken)
+    separator.setStyleSheet("max-height: 1px; min-height: 1px; padding: 0px; spacing: 10; background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 #f0f0f0, stop:1 #f0f0f0);")#グラデーション
+    return separator
+
+  def _createLabel(self, LabelText=""):#RFVisualizationUI用のレイアウト用ラベル
+    layoutLabel = qt.QLabel(LabelText)
+    layoutLabel.setStyleSheet("QLabel {min-width: 50px; max-width: 50px; spacing: 0; margin: 0px;}")#固定長
+    return layoutLabel
+  #---------------------------------------------------
 
   def customMouseAction3D(self):
     threeDViewWidget = slicer.app.layoutManager().threeDWidget(0)

@@ -300,6 +300,12 @@ def createButton(name, callback=None, isCheckable=False, icon=None, toolTip=""):
     button.setCheckable(isCheckable)
     button.setFixedSize(50, 50)
     button.setIconSize(qt.QSize(40,40))
+    #---レイアウト変更--- 20221227 koyanagi
+    #現状、最小幅の制限が入っている為、スタイルシートで最小幅を変更　カーソルのある時だけ枠表示
+    # __ border-radius: 角のまるめ   padding: 余白サイズ
+    button.setStyleSheet('''QPushButton {max-width: 80px; min-width: 12px; padding: 6px; border-width: 0px; margin: 0px; border-radius:10px; spacing: 1;}
+    	QPushButton:hover{border-color:#e0e0e0; border-width: 1px}
+    	''')
     return button
 
 def createButtonMip(name, callback=None, isCheckable=False, icon=None, toolTip=""):
@@ -367,6 +373,9 @@ def wrapInCollapsibleButton(childWidget, collapsibleText, isCollapsed=True):
     collapsibleButton.text = collapsibleText
     collapsibleButton.collapsed = isCollapsed
     collapsibleButtonLayout = qt.QVBoxLayout()
+    #---レイアウト変更--- 20221227 koyanagi
+    #ツールの閉じるボタン＋ラベルの下のスペース削除
+    collapsibleButtonLayout.setMargin(0)
     collapsibleButtonLayout.addWidget(childWidget)
     collapsibleButton.setLayout(collapsibleButtonLayout)
     return collapsibleButton
