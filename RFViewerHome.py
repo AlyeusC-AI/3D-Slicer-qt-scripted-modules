@@ -8,7 +8,7 @@ from RFVisualizationLib import RFVisualizationUI
 from RFReconstruction import *
 from RFReconstruction import RFReconstructionLogic
 from RFViewerHomeLib import DataLoader, ModuleWidget, ToolbarWidget, createButton, Icons, \
-    translatable, ProgressBar, RFSessionSerialization, ExportDirectorySettings , RFViewerWidget, warningMessageBox, wrapInCollapsibleButton
+    translatable, ProgressBar, RFSessionSerialization, ExportDirectorySettings, RFViewerWidget, warningMessageBox, wrapInCollapsibleButton
 import ScreenCapture
 import pydicom
 # from oct2py import Oct2Py
@@ -16,6 +16,7 @@ import threading
 import os.path
 from os import path
 from datetime import datetime
+
 
 class RFViewerHome(ScriptedLoadableModule):
     def __init__(self, parent):
@@ -62,7 +63,8 @@ class RFViewerHomeWidget(RFViewerWidget):
     @classmethod
     def _initDefaultSettings(cls):
         # Set GPU raycasting as default rendering mode
-        qt.QSettings().setValue("VolumeRendering/RenderingMethod", "vtkMRMLGPURayCastVolumeRenderingDisplayNode")
+        qt.QSettings().setValue("VolumeRendering/RenderingMethod",
+                     "vtkMRMLGPURayCastVolumeRenderingDisplayNode")
 
         # Disable exit dialog
         qt.QSettings().setValue("MainWindow/DisableExitDialog", True)
@@ -75,9 +77,8 @@ class RFViewerHomeWidget(RFViewerWidget):
         cls._setDefaultIfDoesntExist("Internationalization/Language", "ja_JP")
 
         if qt.QSettings().value("VolumeRendering/GPUMemorySize", "") == "":
-            slicer.util.findChild(slicer.app.settingsDialog(), "GPUMemoryComboBox").setCurrentText("6 GB")
-
-
+            slicer.util.findChild(slicer.app.settingsDialog(
+            ), "GPUMemoryComboBox").setCurrentText("6 GB")
 
     @classmethod
     def _setDefaultIfDoesntExist(cls, key, value):
@@ -92,8 +93,10 @@ class RFViewerHomeWidget(RFViewerWidget):
         pythonColorMap = {"PromptColorPicker": lightColor,  #
                           "CommandTextColorPicker": lightColor,  #
                           "WelcomeTextColorPicker": lightColor,  #
-                          "BackgroundColorPicker": qt.QColor("#19232d"),  # dark blue
-                          "OutputTextColorPicker": qt.QColor("#50fa7b"),  # green
+                          # dark blue
+                          "BackgroundColorPicker": qt.QColor("#19232d"),
+                          # green
+                          "OutputTextColorPicker": qt.QColor("#50fa7b"),
                           "ErrorTextColorPicker": qt.QColor("#ff5555"),  # red
                           }
 
@@ -104,7 +107,8 @@ class RFViewerHomeWidget(RFViewerWidget):
                 picker.colorChanged(color)
 
             except RuntimeError:
-                logging.error("Failed to set python console color {}".format(pickerName))
+                logging.error(
+                    "Failed to set python console color {}".format(pickerName))
 
     def setup(self):
         ScriptedLoadableModuleWidget.setup(self)
@@ -122,64 +126,67 @@ class RFViewerHomeWidget(RFViewerWidget):
         self._connectWidgetProgressReporting()
 
         # Instantiate session serialization object
-        self._sessionSerializer = RFSessionSerialization(rfWidgets=self._rfModuleWidgets(), loadWidget=self._dataLoaderWidget)
+        self._sessionSerializer = RFSessionSerialization(
+            rfWidgets=self._rfModuleWidgets(), loadWidget=self._dataLoaderWidget)
 
         # Instantiate Toolbar and module widgets
         self._toolbarWidget = ToolbarWidget()
         self._patientInfoWidget = qt.QLabel()
-        #---レイアウト変更--- 20221227 koyanagi
+        # ---レイアウト変更--- 20221227 koyanagi
         self._showhidebutton = qt.QPushButton()
         self._showhidebutton.setIcon(Icons.rightarrow)
-        self._showhidebutton.setIconSize(qt.QSize(10,10))
+        self._showhidebutton.setIconSize(qt.QSize(10, 10))
         self._showhidebutton.setFixedSize(20, 17)
-        self._showhidebutton.setStyleSheet("QPushButton {max-width: 20px; min-width: 2px; padding: 0px; padding-right: 7px; padding-left: 2px; border-width: 1px; margin: 0px; border-radius:5px; spacing: 1;}")
-        
-        
+        self._showhidebutton.setStyleSheet(
+            "QPushButton {max-width: 20px; min-width: 2px; padding: 0px; padding-right: 7px; padding-left: 2px; border-width: 1px; margin: 0px; border-radius:5px; spacing: 1;}")
+
         self._moduleWidget = ModuleWidget()
-        self._moduleWidget1 = ModuleWidget() 
+        self._moduleWidget1 = ModuleWidget()
         # Add toolbar button to the top of the dock to always be visible even on module change
         # When loading RFViewerHome inside of Slicer, toolbar will be displayed under the Slicer logo
         self.toolbarButton = wrapInCollapsibleButton(self._toolbarWidget, collapsibleText=self.tr("Toolbar"),
-                                                isCollapsed=False)
-        self.ModulePanel = slicer.util.findChild(slicer.util.mainWindow(), "ModulePanel")
-        self.dock_content = slicer.util.findChild(slicer.util.mainWindow(), "dockWidgetContents")
+                                                     isCollapsed=False)
+        self.ModulePanel = slicer.util.findChild(
+            slicer.util.mainWindow(), "ModulePanel")
+        self.dock_content = slicer.util.findChild(
+            slicer.util.mainWindow(), "dockWidgetContents")
         self._patientInfoWidget.setText("")
         # self._patientInfoWidget.setStyleSheet("QLabel { color : orange; }")
-        
-        #---レイアウト変更--- 20221227 koyanagi
+
+        # ---レイアウト変更--- 20221227 koyanagi
         separator = qt.QFrame()
         separator.setFrameShape(qt.QFrame.HLine)
         separator.setFrameShadow(qt.QFrame.Plain)
         separator.setLineWidth(0)
         separator.setMidLineWidth(0)
         separator.setStyleSheet("background-color: #f4f4f4;")
-        
-        #self.dock_content.layout().insertWidget(1, self._showhidebutton)
-        #self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
-        #self.dock_content.layout().insertWidget(3, self.toolbarButton)
-        
+
+        # self.dock_content.layout().insertWidget(1, self._showhidebutton)
+        # self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
+        # self.dock_content.layout().insertWidget(3, self.toolbarButton)
+
         self.dock_content.layout().insertWidget(1, self._showhidebutton)
         self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
         self.dock_content.layout().insertWidget(3, separator)
         self.dock_content.layout().insertWidget(4, self.toolbarButton)
-        
+
         self._showhidebutton.clicked.connect(self.showhidePanel)
         # self._showhidebutton.move(10,10)
         # self._showhidebutton.resize(20.30)
         # Add the module widget to the module layout
         self.layout.addWidget(self._moduleWidget1)
         self.layout.addWidget(self._moduleWidget)
-    
+
         # Configure toolbar sections
         self._configureToolbarFileSection()
         self._configureToolbarReconstructionSection()
         self._configureToolbarAnnotationSection()
-        
-        if qt.QSettings().value("IndustryType") == "Medical": 
+
+        if qt.QSettings().value("IndustryType") == "Medical":
             self._configureToolbarSegmentationSection()
         else:
-            self._configureToolbarPanoramaSection() 
-        # self._configureToolbarPanoramaSection()     
+            self._configureToolbarPanoramaSection()
+        # self._configureToolbarPanoramaSection()
     # self._configureToolbarExportSection()
     #    self._configureUndoSection()
 
@@ -188,7 +195,8 @@ class RFViewerHomeWidget(RFViewerWidget):
     #    self.layout.addStretch()
 
         # Load visualisation module by default
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization")) 
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
 
         # Load MRB files if any.
         main_window = slicer.util.mainWindow()
@@ -196,13 +204,14 @@ class RFViewerHomeWidget(RFViewerWidget):
             main_window.commandLineParsed.connect(self._loadCommandLineFiles)
         main_window.onDropEvent.connect(self.onDropEvent)
         # self.dock_content.setFixedWidth(600)
+
     def onDropEvent(self, event):
         """On drop event, try to load Data as Volume"""
         urls = event.mimeData().urls()
         if len(urls) == 1:
             self.onLoadData(urls[0].toLocalFile())
             tmpfilepath = urls[0].toLocalFile()
-            print ("tmpfilepath")
+            print("tmpfilepath")
             if tmpfilepath.endswith(".mrb"):
                 self._sessionSerializer.loadSession(tmpfilepath)
                 ExportDirectorySettings.save(tmpfilepath)
@@ -213,9 +222,10 @@ class RFViewerHomeWidget(RFViewerWidget):
             s = s.strip()
 
         return int(s) if s else 0
+
     def showhidePanel(self):
         if self.tmpflag_showhidebtn == 1:
-        	#---レイアウト変更--- 20221227 koyanagi
+               # ---レイアウト変更--- 20221227 koyanagi
             self.dock_content.setMaximumWidth(40)
             self._moduleWidget1.hide()
             self._moduleWidget.hide()
@@ -224,9 +234,9 @@ class RFViewerHomeWidget(RFViewerWidget):
             self.tmpflag_showhidebtn = 0
             self._showhidebutton.setText("")
             self._showhidebutton.setIcon(Icons.leftarrow)
-            self._showhidebutton.setIconSize(qt.QSize(10,10))
+            self._showhidebutton.setIconSize(qt.QSize(10, 10))
         else:
-        	#---レイアウト変更--- 20221227 koyanagi
+               # ---レイアウト変更--- 20221227 koyanagi
             self.tmpflag_showhidebtn = 1
             self.dock_content.setMaximumWidth(800)
             self._moduleWidget1.show()
@@ -235,9 +245,11 @@ class RFViewerHomeWidget(RFViewerWidget):
             self.toolbarButton.show()
             self._showhidebutton.setText("")
             self._showhidebutton.setIcon(Icons.rightarrow)
-            self._showhidebutton.setIconSize(qt.QSize(10,10))
-    def Average(self, lst): 
-        return sum(lst) / len(lst) 
+            self._showhidebutton.setIconSize(qt.QSize(10, 10))
+
+    def Average(self, lst):
+        return sum(lst) / len(lst)
+
     def _loadCommandLineFiles(self):
         """
         Load first MRB file in passed command line files if any.
@@ -246,7 +258,7 @@ class RFViewerHomeWidget(RFViewerWidget):
         main_window = slicer.util.mainWindow()
         if not hasattr(main_window, "getCommandLineFiles"):
             return
-        
+
         files = main_window.getCommandLineFiles()
         for file in files:
             print(file)
@@ -255,22 +267,29 @@ class RFViewerHomeWidget(RFViewerWidget):
             if file.endswith(".mrb") or file.endswith(".mhd"):
                 self.onLoadData(file)
                 return
-        
-        #RF20220512_yori コマンドから画像開く際は、上でreturnされずここを通る.
+
+        # RF20220512_yori コマンドから画像開く際は、上でreturnされずここを通る.
         #                その際、iniから現在開いている画像のパスを取得して患者情報読み込む.
         file2 = qt.QSettings().value("ExportDirectory") + "/RFViewerSession.mrb"
         if file2:
             self.onLoadData(file2)
-        #RF20220512_end
+        # RF20220512_end
 
     def _instantiateModuleWidgets(self):
-        self._visualizationWidget = slicer.util.getModuleGui(slicer.modules.rfvisualization)
-        self._reconstructionWidget = slicer.util.getModuleGui(slicer.modules.rfreconstruction)
-        self._panoramaReconstructionWidget = slicer.util.getModuleGui(slicer.modules.rfpanoramareconstruction)
-        self._annotationWidget = slicer.util.getModuleGui(slicer.modules.rfannotation)
-        self._implantWidget = slicer.util.getModuleGui(slicer.modules.rfimplant)
-        self._panoramaWidget = slicer.util.getModuleGui(slicer.modules.rfpanorama)
-        self._segmentationWidget = slicer.util.getModuleGui(slicer.modules.rfsegmentation)
+        self._visualizationWidget = slicer.util.getModuleGui(
+            slicer.modules.rfvisualization)
+        self._reconstructionWidget = slicer.util.getModuleGui(
+            slicer.modules.rfreconstruction)
+        self._panoramaReconstructionWidget = slicer.util.getModuleGui(
+            slicer.modules.rfpanoramareconstruction)
+        self._annotationWidget = slicer.util.getModuleGui(
+            slicer.modules.rfannotation)
+        self._implantWidget = slicer.util.getModuleGui(
+            slicer.modules.rfimplant)
+        self._panoramaWidget = slicer.util.getModuleGui(
+            slicer.modules.rfpanorama)
+        self._segmentationWidget = slicer.util.getModuleGui(
+            slicer.modules.rfsegmentation)
         self._exportWidget = slicer.util.getModuleGui(slicer.modules.rfexport)
 
     def _rfModuleWidgets(self):
@@ -290,7 +309,8 @@ class RFViewerHomeWidget(RFViewerWidget):
 
     def _connectDataLoading(self):
         for moduleWidget in self._rfModuleWidgets():
-            self._dataLoaderWidget.volumeNodeChanged.connect(moduleWidget.setVolumeNode)
+            self._dataLoaderWidget.volumeNodeChanged.connect(
+                moduleWidget.setVolumeNode)
 
     def _connectWidgetProgressReporting(self):
         for moduleWidget in self._rfModuleWidgets():
@@ -301,9 +321,9 @@ class RFViewerHomeWidget(RFViewerWidget):
         lm = slicer.app.layoutManager()
         sliceNames = lm.sliceViewNames()
         for sliceName in sliceNames:
-          sliceWidget = lm.sliceWidget(sliceName)
-          sliceView = sliceWidget.sliceView()
-          sliceView.setPatientId(patientId)
+            sliceWidget = lm.sliceWidget(sliceName)
+            sliceView = sliceWidget.sliceView()
+            sliceView.setPatientId(patientId)
 
     def onLoadData(self, filePath):
         if not filePath:
@@ -311,89 +331,100 @@ class RFViewerHomeWidget(RFViewerWidget):
         filePath = os.path.join(os.path.dirname(filePath), "NAOMICT_UTF8.mnri")
         IndustryTypeValue = qt.QSettings().value("IndustryType")
         self._patientInfoWidget.setText("")
-        try:    
+        try:
             mnri_settings = RFReconstructionLogic.MNRISettings(filePath)
-            
-            WindowCenter = self.makeInt(mnri_settings.value("Frame/WindowCenter"))
-            WindowWidth = self.makeInt(mnri_settings.value("Frame/WindowWidth"))
+
+            WindowCenter = self.makeInt(
+                mnri_settings.value("Frame/WindowCenter"))
+            WindowWidth = self.makeInt(
+                mnri_settings.value("Frame/WindowWidth"))
             qt.QSettings().setValue("WindowCenter", WindowCenter)
             qt.QSettings().setValue("WindowWidth", WindowWidth)
             volx = self.makeInt(mnri_settings.value("BackProjection/VolXDim"))
             if volx > 0:
                 qt.QSettings().setValue("volx", volx)
-            #RF20220512_yori ID7桁対策. 下記関数はRFReconstruction.py内に追加済みのもの.
+            # RF20220512_yori ID7桁対策. 下記関数はRFReconstruction.py内に追加済みのもの.
             patientId = mnri_settings.IDvalue("DicomPatientInfo/PatientId")
-            #RF20220512_else
-            #patientId = mnri_settings.value("DicomPatientInfo/PatientId")
-            #RF20220512_end
+            # RF20220512_else
+            # patientId = mnri_settings.value("DicomPatientInfo/PatientId")
+            # RF20220512_end
             self.setPatientId(patientId)
             # self.ui.raycastSelector.setCurrentIndex(0)
 
             patientName = mnri_settings.value("DicomPatientInfo/PatientName")
-            patientSex = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientSex"))
-            #RF20220512_yori 日本語で.
+            patientSex = self.makeInt(
+                mnri_settings.value("DicomPatientInfo/PatientSex"))
+            # RF20220512_yori 日本語で.
             if patientSex == 1:
                 patientSexStr = "男性"
             elif patientSex == -1:
                 patientSexStr = "女性"
             else:
-                patientSexStr = ""           
-            #RF20220512_else
-            #if patientSex == 1:
+                patientSexStr = ""
+            # RF20220512_else
+            # if patientSex == 1:
             #    patientSexStr = "Male"
-            #elif patientSex == -1:
+            # elif patientSex == -1:
             #    patientSexStr = "Female"
-            #else:
+            # else:
             #    patientSexStr = "Unknown"
-            #RF20220512_end
-            y = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthYear"))
-            m = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthMonth"))
-            d = self.makeInt(mnri_settings.value("DicomPatientInfo/PatientBirthDate"))
-            if y > 0 and m > 0 and d > 0: 
-                BithdayDate = qt.QDate(y , m , d).toString("yyyy.MM.dd")
-            else: 
+            # RF20220512_end
+            y = self.makeInt(mnri_settings.value(
+                "DicomPatientInfo/PatientBirthYear"))
+            m = self.makeInt(mnri_settings.value(
+                "DicomPatientInfo/PatientBirthMonth"))
+            d = self.makeInt(mnri_settings.value(
+                "DicomPatientInfo/PatientBirthDate"))
+            if y > 0 and m > 0 and d > 0:
+                BithdayDate = qt.QDate(y, m, d).toString("yyyy.MM.dd")
+            else:
                 BithdayDate = "2000.1.1"
             datetime = qt.QDate.currentDate()
             strnow = datetime.toString(qt.Qt.ISODate)
-            strnow = strnow.replace("-",".")
-            #RF20220512_yori 項目名追記＋今日の日付は無しで.
+            strnow = strnow.replace("-", ".")
+            # RF20220512_yori 項目名追記＋今日の日付は無しで.
             tmpstr = ""
             if IndustryTypeValue == "Industrial":
                 tmpstr = "ID: " + str(patientId) + " / 品名: " + patientName
             else:
-            	#---レイアウト変更--- 20221227 koyanagi
-                tmpstr = "ID:" + str(patientId) + " /名前:" + patientName + " /性別:" + patientSexStr + " /生年月日:" +BithdayDate
-                #tmpstr = "患者ID: " + str(patientId) + " / 患者名: " + patientName + " / 性別: " + patientSexStr + " / 生年月日: " +BithdayDate
+                # ---レイアウト変更--- 20221227 koyanagi
+                tmpstr = "ID:" + str(patientId) + " /名前:" + patientName + \
+                                     " /性別:" + patientSexStr + " /生年月日:" + BithdayDate
+                # tmpstr = "患者ID: " + str(patientId) + " / 患者名: " + patientName + " / 性別: " + patientSexStr + " / 生年月日: " +BithdayDate
             self._patientInfoWidget.setText(tmpstr)
-            #RF20220512_else
-            #tmpstr = str(patientId) + " /" + patientName + " /" + patientSexStr + " /" +BithdayDate + " /" +strnow
-            #if IndustryTypeValue == "Industrial":      
+            # RF20220512_else
+            # tmpstr = str(patientId) + " /" + patientName + " /" + patientSexStr + " /" +BithdayDate + " /" +strnow
+            # if IndustryTypeValue == "Industrial":
             #    self._patientInfoWidget.setText(str(patientId) + " /" + strnow)
-            #else:
+            # else:
             #    self._patientInfoWidget.setText(tmpstr)
-            #RF20220512_end
+            # RF20220512_end
         except:
             self._patientInfoWidget.setText("")
             qt.QSettings().setValue("WindowCenter", 3400)
             qt.QSettings().setValue("WindowWidth", 750)
+
     def _configureToolbarFileSection(self):
         self._toolbarWidget.createSection(self.tr("File"))
        # Save session
-        reconstruction3dButton = createButton("", self.loadReconstructionModule)
+        reconstruction3dButton = createButton(
+            "", self.loadReconstructionModule)
         reconstruction3dButton.setIcon(Icons.reconstruction3d)
         self._toolbarWidget.addButton(reconstruction3dButton)
-        
-        sessionSaveButton = createButton("", lambda *x: self._sessionSerializer.onSaveSession())
+
+        sessionSaveButton = createButton(
+            "", lambda *x: self._sessionSerializer.onSaveSession())
         sessionSaveButton.setIcon(Icons.sessionSave)
         self._toolbarWidget.addButton(sessionSaveButton)
-        
+
         exportDICOMButton = createButton("", self.loadExportModule)
         exportDICOMButton.setIcon(Icons.exportDICOM)
         self._toolbarWidget.addButton(exportDICOMButton)
-        
-      
-        
-        
+
+        tileViewButton = createButton("", self.hogehoge)
+        # tileViewButton = createButton("", self.loadTileViewModule)
+        tileViewButton.setIcon(Icons.leftarrow)
+        self._toolbarWidget.addButton(tileViewButton)
 
     def _configureToolbarReconstructionSection(self):
         self._toolbarWidget.createSection()
@@ -427,53 +458,55 @@ class RFViewerHomeWidget(RFViewerWidget):
 
         measureToolButton = createButton("", self.loadAnnotationModule)
         measureToolButton.setIcon(Icons.measureTool)
-        self._toolbarWidget.addButton(measureToolButton) 
+        self._toolbarWidget.addButton(measureToolButton)
 
-        
-        AnnotationAngleButton = createButton("", self.loadAnnotationAngleModule)
+        AnnotationAngleButton = createButton(
+            "", self.loadAnnotationAngleModule)
         AnnotationAngleButton.setIcon(Icons.AnnotationAngle)
         self._toolbarWidget.addButton(AnnotationAngleButton)
+
     def _configureToolbarPanoramaSection(self):
         self._toolbarWidget.createSection(self.tr("描画ツール"))
-        
+
         implantToolButton = createButton("", self.loadImplantModule)
         implantToolButton.setIcon(Icons.implantTool)
-        self._toolbarWidget.addButton(implantToolButton) 
+        self._toolbarWidget.addButton(implantToolButton)
 
         # panoramaToolButton = createButton("", self.loadPanoramaModule)
         # panoramaToolButton.setIcon(Icons.PanoramaDisplay)
-        # self._toolbarWidget.addButton(panoramaToolButton) 
-       
+        # self._toolbarWidget.addButton(panoramaToolButton)
+
         AnnotationLineButton = createButton("", self.loadAnnotationLineModule)
         AnnotationLineButton.setIcon(Icons.AnnotationLine)
         self._toolbarWidget.addButton(AnnotationLineButton)
+
     def _configureToolbarSegmentationSection(self):
         SegmentationButton = createButton("", self.loadSegmentationModule)
         SegmentationButton.setIcon(Icons.Segmentation)
         # self._toolbarWidget.addButton(SegmentationButton)
 
-
     def _configureToolbarExportSection(self):
         self._toolbarWidget.createSection()
-        self._toolbarWidget.addButton(createButton(self.tr("Export Tools"), self.loadExportModule))
+        self._toolbarWidget.addButton(createButton(
+            self.tr("Export Tools"), self.loadExportModule))
 
     def _configureUndoSection(self):
         self._toolbarWidget.createSection()
         self._toolbarWidget.addButton(createButton(self.tr("Undo"), self.undo))
 
-
     def loadAnnotationLineModule(self):
         self._currentWidget = slicer.modules.RFAnnotationWidget
-        self._moduleWidget.setModule(self._annotationWidget, self.tr("Annotations"))
+        self._moduleWidget.setModule(
+            self._annotationWidget, self.tr("Annotations"))
         self._currentWidget.onModuleOpened()
         self._currentWidget.canalWidget.addCanalButton.click()
-    
+
     def loadAnnotationAngleModule(self):
         self._currentWidget = slicer.modules.RFAnnotationWidget
-        self._moduleWidget.setModule(self._annotationWidget, self.tr("Annotations"))
+        self._moduleWidget.setModule(
+            self._annotationWidget, self.tr("Annotations"))
         self._currentWidget.onModuleOpened()
         self._currentWidget._widget.createAnglePushButton.click()
-
 
     def connectProgressSignal(self, widget):
         widget.addProgressBar.connect(self.onAddProgressBar)
@@ -489,10 +522,12 @@ class RFViewerHomeWidget(RFViewerWidget):
 
     def loadSegmentationModule(self):
         self._currentWidget = slicer.modules.RFSegmentationWidget
-        self._moduleWidget.setModule(self._segmentationWidget, self.tr("Segmentation"))
+        self._moduleWidget.setModule(
+            self._segmentationWidget, self.tr("Segmentation"))
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
-        
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
+
     def onRemoveProgressBar(self, progressName):
         if progressName not in self._progressBars:
             return
@@ -501,34 +536,37 @@ class RFViewerHomeWidget(RFViewerWidget):
         self.layout.removeWidget(progressBar)
         progressBar.setVisible(False)
         del self._progressBars[progressName]
+
     def loadTakeScreenshotModule(self):
         self._currentWidget = slicer.modules.RFExportWidget
         self._currentWidget.onModuleOpened()
         self._currentWidget.takeScreenshotButton.click()
-    
+
     def DVDexportModule(self):
         self._currentWidget = slicer.modules.RFExportWidget
         self._currentWidget.onModuleOpened()
         self._currentWidget.DVDexportButton.click()
-    
+
     def AllResetModule(self):
-        
+
         msg = qt.QMessageBox()
         msg.setIcon(qt.QMessageBox.Information)
 
         msg.setText("全ての画像編集をリセットします。")
         msg.setInformativeText("よろしいですか？")
- 
+
         pButtonYes = msg.addButton("はい", qt.QMessageBox.YesRole)
         msg.addButton("キャンセル", qt.QMessageBox.NoRole)
-        # cancelBtn.connect(self.msgbtn)    
+        # cancelBtn.connect(self.msgbtn)
         msg.exec_()
 
         if msg.clickedButton() == pButtonYes:
             if path.exists(self._sessionSerializer._lastSessionPath()):
-                
-                self._sessionSerializer.loadSession(self._sessionSerializer._lastSessionPath())
-                views = slicer.util.getNodesByClass('vtkMRMLSliceCompositeNode')
+
+                self._sessionSerializer.loadSession(
+                    self._sessionSerializer._lastSessionPath())
+                views = slicer.util.getNodesByClass(
+                    'vtkMRMLSliceCompositeNode')
                 for view in views:
                     view.SetSliceIntersectionVisibility(False)
                 # Set 3D view
@@ -560,43 +598,184 @@ class RFViewerHomeWidget(RFViewerWidget):
             msg.addButton("OK", qt.QMessageBox.NoRole)
             msgAttached.exec_()
 
+    def loadTileViewModule(self):
+        winMatSize = 2
+        action = qt.QAction(None)
+        action.setData(winMatSize)
+        slicer.util.mainWindow().onLayoutCompareGridActionTriggered(action)
+        # c = slicer.app.layoutManager().sliceWidget("Compare1").mrmlSliceNode()
+        ref = slicer.app.layoutManager().sliceWidget("Yellow").mrmlSliceNode()
+        orientation = ref.GetOrientation()
+        offset = ref.GetSliceOffset()
+        fov = ref.GetFieldOfView()
+        for i in range(1, winMatSize * winMatSize + 1):
+            widgetName = "Compare" + str(i)
+            c = slicer.app.layoutManager().sliceWidget(widgetName).mrmlSliceNode()
+            c.SetSliceOffset(offset)
+            c.SetOrientation(orientation)
+            c.SetFieldOfView(*fov)
+            c.SetWidgetVisible(True)
+            offset = offset + 10
+            # slicer.app.layoutManager().sliceWidget(widgetName).mrmlSliceNode().renderWindow().Render()
+        slicer.util.setSliceViewerLayers('vtkMRMLScalarVolumeNode1')
+
+    def hogehoge(self):
+
+        customLayout = """
+<layout type="tab">
+    <property name="currentIndex">
+        <number>1</number>
+    </property>
+
+    <item name="MainTab">
+  <layout type=\"vertical\">
+   <item>
+    <layout type=\"horizontal\">
+     <item>
+      <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
+       <property name=\"orientation\" action=\"default\">Axial</property>
+       <property name=\"viewlabel\" action=\"default\">R</property>
+       <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+      </view>
+     </item>
+     <item>
+      <view class=\"vtkMRMLViewNode\" singletontag=\"1\">
+       <property name=\"viewlabel\" action=\"default\">1</property>
+      </view>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout type=\"horizontal\">
+     <item>
+      <view class=\"vtkMRMLSliceNode\" singletontag=\"Green\">
+       <property name=\"orientation\" action=\"default\">Coronal</property>
+       <property name=\"viewlabel\" action=\"default\">G</property>
+       <property name=\"viewcolor\" action=\"default\">#6EB04B</property>
+      </view>
+     </item>
+     <item>
+      <view class=\"vtkMRMLSliceNode\" singletontag=\"Yellow\">
+       <property name=\"orientation\" action=\"default\">Sagittal</property>
+       <property name=\"viewlabel\" action=\"default\">Y</property>
+       <property name=\"viewcolor\" action=\"default\">#EDD54C</property>
+      </view>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </item>
+    <item name="タイルビュー">
+        <layout type=\"vertical\">
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R1</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare2\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R2</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+        </layout>
+    </item>
+</layout>
+"""
+        customLayoutId = 502
+
+        layoutManager = slicer.app.layoutManager()
+
+        layoutManager.layoutLogic().GetLayoutNode(
+        ).AddLayoutDescription(customLayoutId, customLayout)
+
+        data = layoutManager.layoutLogic().GetLayoutNode(
+        ).GetLayoutDescription(
+            slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView
+            )
+
+        layoutManager.layoutLogic().GetLayoutNode(
+        ).AddLayoutDescription(customLayoutId, data)
+
+        layoutManager.setLayout(customLayoutId)
+
     def loadVisualisationModule(self):
         self._currentWidget = slicer.modules.RFVisualizationWidget
-        self._moduleWidget.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
         self._currentWidget.onModuleOpened()
 
     def loadReconstructionModule(self):
         self._currentWidget = slicer.modules.RFReconstructionWidget
-        self._moduleWidget.setModule(self._reconstructionWidget, self.tr("Reconstruction"))
-        slicer.modules.RFReconstructionWidget.setLoadWidget(self._dataLoaderWidget)
+        self._moduleWidget.setModule(
+            self._reconstructionWidget, self.tr("Reconstruction"))
+        slicer.modules.RFReconstructionWidget.setLoadWidget(
+            self._dataLoaderWidget)
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
 
     def loadPanoramaReconstructionModule(self):
-        self._moduleWidget.setModule(self._panoramaReconstructionWidget, self.tr("Panorama Reconstruction"))
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget.setModule(
+            self._panoramaReconstructionWidget, self.tr("Panorama Reconstruction"))
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
+
     def loadAnnotationModule(self):
         self._currentWidget = slicer.modules.RFAnnotationWidget
-        self._moduleWidget.setModule(self._annotationWidget, self.tr("Annotations"))
+        self._moduleWidget.setModule(
+            self._annotationWidget, self.tr("Annotations"))
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
         self._currentWidget._widget.createLinePushButton.click()
 
     def loadImplantModule(self):
         self._currentWidget = slicer.modules.RFImplantWidget
         self._moduleWidget.setModule(self._implantWidget, self.tr("Implants"))
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization")) 
+        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+
     def loadPanoramaModule(self):
         self._currentWidget = slicer.modules.RFPanoramaWidget
         self._moduleWidget.setModule(self._panoramaWidget, self.tr("Panorama"))
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
+
     def loadSegmentationModule(self):
         self._currentWidget = slicer.modules.RFSegmentationWidget
-        self._moduleWidget.setModule(self._segmentationWidget, self.tr("Segmentation"))
+        self._moduleWidget.setModule(
+            self._segmentationWidget, self.tr("Segmentation"))
         self._currentWidget.onModuleOpened()
-        self._moduleWidget1.setModule(self._visualizationWidget, self.tr("Visualization"))
+        self._moduleWidget1.setModule(
+            self._visualizationWidget, self.tr("Visualization"))
+
     def loadExportModule(self):
         self._currentWidget = slicer.modules.RFExportWidget
         self._currentWidget.onModuleOpened()
@@ -613,38 +792,45 @@ class RFViewerHomeWidget(RFViewerWidget):
             sliceControlWidget.resetSliceToBackground()
             sliceControlWidget.rotateSliceToBackground()
             sliceControlWidget.fitSliceToBackground()
+
     def undo(self):
         if self._currentWidget:
             self._currentWidget.undo()
 
     def onSessionAboutToBeSaved(self):
         parameterNode = self.getParameterNode()
-        parameterNode.SetParameter("CurrentNodeID", self._dataLoaderWidget.getCurrentNodeID())
+        parameterNode.SetParameter(
+            "CurrentNodeID", self._dataLoaderWidget.getCurrentNodeID())
 
     def onSessionLoaded(self):
         parameterNode = self.getParameterNode()
-        self._dataLoaderWidget.restoreCurrentNodeFromID(parameterNode.GetParameter("CurrentNodeID"))
+        self._dataLoaderWidget.restoreCurrentNodeFromID(
+            parameterNode.GetParameter("CurrentNodeID"))
 
     def reconstructAndSaveSession(self, mnriPath, mrbOutputPath):
         # Disable loading notifications
         self._dataLoaderWidget.setVolumeAddedNotificationEnabled(False)
         # Reconstruct synchronously
         mnri_settings = RFReconstructionLogic.MNRISettings(mnriPath)
-        try: 
+        try:
             typeValue = int(mnri_settings.value("Frame/Type"))
             if typeValue != 1:
-                cli_node = slicer.modules.RFReconstructionWidget.reconstruct(mnriPath=mnriPath, isCliSynchronous=True)
+                cli_node = slicer.modules.RFReconstructionWidget.reconstruct(
+                    mnriPath=mnriPath, isCliSynchronous=True)
             else:
-                cli_node = slicer.modules.RFReconstructionWidget.reconstructForTwoImages(mnriPath)
+                cli_node = slicer.modules.RFReconstructionWidget.reconstructForTwoImages(
+                    mnriPath)
         except:
-            cli_node = slicer.modules.RFReconstructionWidget.reconstruct(mnriPath=mnriPath, isCliSynchronous=True)
+            cli_node = slicer.modules.RFReconstructionWidget.reconstruct(
+                mnriPath=mnriPath, isCliSynchronous=True)
 
         # # Reconstruct synchronously
         # cli_node = slicer.modules.RFReconstructionWidget.reconstruct(mnriPath=mnriPath, isCliSynchronous=True)
 
         # Save session if reconstruction was successful
         if not cli_node.GetStatusString() == 'Completed':
-            warningMessageBox(self.tr("Reconstruction Failed"), f"{cli_node.GetErrorText()}")
+            warningMessageBox(self.tr("Reconstruction Failed"),
+                              f"{cli_node.GetErrorText()}")
             self._dataLoaderWidget.setVolumeAddedNotificationEnabled(True)
             return
 
@@ -656,7 +842,8 @@ class RFViewerHomeWidget(RFViewerWidget):
         slicer.app.processEvents()
 
         # Save session
-        self._sessionSerializer.saveSession(mrbOutputPath, showMessageBox=False)
+        self._sessionSerializer.saveSession(
+            mrbOutputPath, showMessageBox=False)
 
         # Enable notifications
         self._dataLoaderWidget.setVolumeAddedNotificationEnabled(True)
