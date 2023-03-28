@@ -623,10 +623,6 @@ class RFViewerHomeWidget(RFViewerWidget):
 
         customLayout = """
 <layout type="tab">
-    <property name="currentIndex">
-        <number>1</number>
-    </property>
-
     <item name="MainTab">
   <layout type=\"vertical\">
    <item>
