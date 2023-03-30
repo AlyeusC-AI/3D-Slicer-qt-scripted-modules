@@ -599,6 +599,8 @@ class RFViewerHomeWidget(RFViewerWidget):
             msgAttached.exec_()
 
     def loadTileViewModule(self):
+        RFVisualizationUI.showTileViewToolbar()
+        '''
         winMatSize = 2
         action = qt.QAction(None)
         action.setData(winMatSize)
@@ -618,6 +620,7 @@ class RFViewerHomeWidget(RFViewerWidget):
             offset = offset + 10
             # slicer.app.layoutManager().sliceWidget(widgetName).mrmlSliceNode().renderWindow().Render()
         slicer.util.setSliceViewerLayers('vtkMRMLScalarVolumeNode1')
+        '''
 
     def hogehoge(self):
 
@@ -719,6 +722,14 @@ class RFViewerHomeWidget(RFViewerWidget):
         ).AddLayoutDescription(customLayoutId, data)
 
         layoutManager.setLayout(customLayoutId)
+
+        def tabIndexChanged(self):
+            tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
+            print (tabBar_index)
+
+        tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
+        tabBar.currentChanged.connect(tabIndexChanged)
+        #----------------------
 
     def loadVisualisationModule(self):
         self._currentWidget = slicer.modules.RFVisualizationWidget
