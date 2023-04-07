@@ -93,6 +93,8 @@ def layoutSetup(layoutManager):
   """
 
   globalLayout = r"""
+  <layout type="tab">
+  <item name="MainTab">
   <layout type="horizontal" split="true" >
     <item splitSize="500">
       {mainView}
@@ -111,9 +113,14 @@ def layoutSetup(layoutManager):
       </layout>
     </item>
   </layout>
+
+  </item>
+  </layout>
   """
 
   panoramaLayout = r"""
+  <layout type="tab">
+  <item name="MainTab">
   <layout type="vertical" split="true" >
     <item splitSize="400">
       {mainView}
@@ -132,6 +139,9 @@ def layoutSetup(layoutManager):
       </layout>
     </item>
   </layout>
+
+  </item>
+  </layout>
   """.format(mainView=panoramaFrontView, subViewTop=panoramaLateralView, subViewMiddle=axialView, subViewBottom=view3D)
 
   axialLayout = globalLayout.format(mainView=axialView, subViewTop=view3D, subViewMiddle=sagittalView, subViewBottom=coronalView)
@@ -143,6 +153,24 @@ def layoutSetup(layoutManager):
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFMainSagittalLayout, sagittalLayout)
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFPanoramaLayout, panoramaLayout)
 
+  """added tab to current layout"
+     tab付与に時間かかっている。仕様が固まったら最初からtab付与の形を検討する(C++側の変更が必要?)""
+  layouts = [
+    RFLayoutType.RFConventional,
+    RFLayoutType.RFDual3D,
+    RFLayoutType.RFTriple3D,
+    RFLayoutType.RF3DOnly,
+    RFLayoutType.RFAxialOnly,
+    RFLayoutType.RFDefaultLayout,
+    RFLayoutType.RFMain3DLayout,
+    RFLayoutType.RFLineProfileLayout]
+
+  for l in layouts:
+    layout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(l)
+    tabLayout = ''.join(['<layout type="tab"> <item name="MainTab">',
+                        layout,
+                        '</item> </layout>'])
+    layoutManager.layoutLogic().GetLayoutNode().SetLayoutDescription(l, tabLayout)
 
 def layoutBackgroundSetup(viewNode):
   viewNode.SetBackgroundColor(0.5, 0.5, 0.5)
