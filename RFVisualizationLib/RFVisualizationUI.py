@@ -51,11 +51,6 @@ class RFVisualizationUI(qt.QStackedWidget):
     self.addWidget(self._tileWidget)
     self.setCurrentIndex(0)
 
-#     slicer.app.connect("startupCompleted()", self.registerTabObserver)
-# 
-#   def registerTabObserver(self):
-#     tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
-#     tabBar.currentChanged.connect(self.tabIndexChanged)
 
   def setVolumeNode(self, volumeNode, displayNode3D, isLoadingState):
     # Select volume in VolumeRenderingWidget selector for volume cropping and deactivate previous cropping settings
@@ -118,11 +113,6 @@ class RFVisualizationUI(qt.QStackedWidget):
     # Set window level and scalar mapping widgets input nodes
     self.windowLevelWidget.setMRMLVolumeNode(volumeNode)
     self.scalarMappingWidget.setMRMLVolumePropertyNode(displayNode3D.GetVolumePropertyNode() if displayNode3D else None)
-
-  def tabIndexChanged(self):
-      tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
-      print (tabBar_index)
-      self.setCurrentIndex(tabBar_index)
 
   def createTileUILayout(self): 
     #alignment.
