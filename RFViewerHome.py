@@ -4,7 +4,7 @@ import qt
 import slicer
 from slicer.ScriptedLoadableModule import *
 from RFViewerHomeLib import *
-from RFVisualizationLib import RFVisualizationUI
+from RFVisualizationLib import RFVisualizationUI, RFLayoutType
 from RFReconstruction import *
 from RFReconstruction import RFReconstructionLogic
 from RFViewerHomeLib import DataLoader, ModuleWidget, ToolbarWidget, createButton, Icons, \
@@ -421,8 +421,7 @@ class RFViewerHomeWidget(RFViewerWidget):
         exportDICOMButton.setIcon(Icons.exportDICOM)
         self._toolbarWidget.addButton(exportDICOMButton)
 
-        tileViewButton = createButton("", self.hogehoge)
-        # tileViewButton = createButton("", self.loadTileViewModule)
+        tileViewButton = createButton("", self.changeTileLayout)
         tileViewButton.setIcon(Icons.leftarrow)
         self._toolbarWidget.addButton(tileViewButton)
 
@@ -597,139 +596,21 @@ class RFViewerHomeWidget(RFViewerWidget):
             msgAttached.setText("Debugger Attached!!")
             msg.addButton("OK", qt.QMessageBox.NoRole)
             msgAttached.exec_()
-
-    def loadTileViewModule(self):
-        RFVisualizationUI.showTileViewToolbar()
-        '''
-        winMatSize = 2
-        action = qt.QAction(None)
-        action.setData(winMatSize)
-        slicer.util.mainWindow().onLayoutCompareGridActionTriggered(action)
-        # c = slicer.app.layoutManager().sliceWidget("Compare1").mrmlSliceNode()
-        ref = slicer.app.layoutManager().sliceWidget("Yellow").mrmlSliceNode()
-        orientation = ref.GetOrientation()
-        offset = ref.GetSliceOffset()
-        fov = ref.GetFieldOfView()
-        for i in range(1, winMatSize * winMatSize + 1):
-            widgetName = "Compare" + str(i)
-            c = slicer.app.layoutManager().sliceWidget(widgetName).mrmlSliceNode()
-            c.SetSliceOffset(offset)
-            c.SetOrientation(orientation)
-            c.SetFieldOfView(*fov)
-            c.SetWidgetVisible(True)
-            offset = offset + 10
-            # slicer.app.layoutManager().sliceWidget(widgetName).mrmlSliceNode().renderWindow().Render()
-        slicer.util.setSliceViewerLayers('vtkMRMLScalarVolumeNode1')
-        '''
-
-    def hogehoge(self):
-
-        customLayout = """
-<layout type="tab">
-    <item name="MainTab">
-  <layout type=\"vertical\">
-   <item>
-    <layout type=\"horizontal\">
-     <item>
-      <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
-       <property name=\"orientation\" action=\"default\">Axial</property>
-       <property name=\"viewlabel\" action=\"default\">R</property>
-       <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-      </view>
-     </item>
-     <item>
-      <view class=\"vtkMRMLViewNode\" singletontag=\"1\">
-       <property name=\"viewlabel\" action=\"default\">1</property>
-      </view>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout type=\"horizontal\">
-     <item>
-      <view class=\"vtkMRMLSliceNode\" singletontag=\"Green\">
-       <property name=\"orientation\" action=\"default\">Coronal</property>
-       <property name=\"viewlabel\" action=\"default\">G</property>
-       <property name=\"viewcolor\" action=\"default\">#6EB04B</property>
-      </view>
-     </item>
-     <item>
-      <view class=\"vtkMRMLSliceNode\" singletontag=\"Yellow\">
-       <property name=\"orientation\" action=\"default\">Sagittal</property>
-       <property name=\"viewlabel\" action=\"default\">Y</property>
-       <property name=\"viewcolor\" action=\"default\">#EDD54C</property>
-      </view>
-     </item>
-    </layout>
-   </item>
-  </layout>
- </item>
-    <item name="タイルビュー">
-        <layout type=\"vertical\">
-            <item>
-                <layout type=\"horizontal\">
-                    <item>
-                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
-                            <property name=\"orientation\" action=\"default\">Axial</property>
-                            <property name=\"viewlabel\" action=\"default\">R1</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-                        </view>
-                    </item>
-                    <item>
-                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare2\">
-                            <property name=\"orientation\" action=\"default\">Axial</property>
-                            <property name=\"viewlabel\" action=\"default\">R2</property>
-                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
-                        </view>
-                    </item>
-                </layout>
-            </item>
-            <item>
-                <layout type=\"horizontal\">
-                    <item>
-                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
-                            <property name=\"orientation\" action=\"default\">Axial</property>
-                            <property name=\"viewlabel\" action=\"default\">R3</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-                        </view>
-                    </item>
-                    <item>
-                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
-                            <property name=\"orientation\" action=\"default\">Axial</property>
-                            <property name=\"viewlabel\" action=\"default\">R3</property>
-                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
-                        </view>
-                    </item>
-                </layout>
-            </item>
-        </layout>
-    </item>
-</layout>
-"""
-        customLayoutId = 502
-
+    def tabIndexChanged(self, index):
         layoutManager = slicer.app.layoutManager()
+        tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
+        print (tabBar_index)
+        if tabBar_index == 0:
+            self._prevLayout = layoutManager.layout
+        else:
+            layoutManager.setLayout(self._prevLayout)
 
-        layoutManager.layoutLogic().GetLayoutNode(
-        ).AddLayoutDescription(customLayoutId, customLayout)
-
-        data = layoutManager.layoutLogic().GetLayoutNode(
-        ).GetLayoutDescription(
-            slicer.vtkMRMLLayoutNode.SlicerLayoutFourUpView
-            )
-
-        layoutManager.layoutLogic().GetLayoutNode(
-        ).AddLayoutDescription(customLayoutId, data)
-
-        layoutManager.setLayout(customLayoutId)
-
-        def tabIndexChanged(self):
-            tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
-            print (tabBar_index)
-
+    def changeTileLayout(self):
+        layoutManager = slicer.app.layoutManager()
+        self._prevLayout = layoutManager.layout
+        layoutManager.setLayout(RFLayoutType.RFTileLayout)
         tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
-        tabBar.currentChanged.connect(tabIndexChanged)
-        #----------------------
+        tabBar.currentChanged.connect(self.tabIndexChanged)
 
     def loadVisualisationModule(self):
         self._currentWidget = slicer.modules.RFVisualizationWidget
