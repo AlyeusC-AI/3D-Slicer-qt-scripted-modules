@@ -16,12 +16,15 @@ class IndustryType(Enum):
 
 
 @translatable
-class RFVisualizationUI(qt.QWidget):
+class RFVisualizationUI(qt.QStackedWidget):
 
   def __init__(self, vrLogic, preset, industryType):
-    qt.QWidget.__init__(self)
+    qt.QStackedWidget.__init__(self)
 
+    self._normalWidget = qt.QWidget()
+    self._tileWidget = qt.QWidget()
     self._layout = qt.QFormLayout()
+    self._tileLayout = qt.QFormLayout() #表示設定部位
     #---レイアウト変更--- 20221227 koyanagi
     # スペース削減とレイアウト順変更
     self._layout.setMargin(3)#マージン削減
@@ -37,10 +40,22 @@ class RFVisualizationUI(qt.QWidget):
     self.addMagnificationSection()
     self.addAdvancedSection()
 
-    self.setLayout(self._layout)
-
     self.customMouseAction3D()
     self.customMouseAction2D()
+
+    self.createTileUILayout()
+    self._normalWidget.setLayout(self._layout)
+    self._tileWidget.setLayout(self._tileLayout)
+
+    self.addWidget(self._normalWidget)
+    self.addWidget(self._tileWidget)
+    self.setCurrentIndex(0)
+
+#     slicer.app.connect("startupCompleted()", self.registerTabObserver)
+# 
+#   def registerTabObserver(self):
+#     tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
+#     tabBar.currentChanged.connect(self.tabIndexChanged)
 
   def setVolumeNode(self, volumeNode, displayNode3D, isLoadingState):
     # Select volume in VolumeRenderingWidget selector for volume cropping and deactivate previous cropping settings
@@ -103,6 +118,78 @@ class RFVisualizationUI(qt.QWidget):
     # Set window level and scalar mapping widgets input nodes
     self.windowLevelWidget.setMRMLVolumeNode(volumeNode)
     self.scalarMappingWidget.setMRMLVolumePropertyNode(displayNode3D.GetVolumePropertyNode() if displayNode3D else None)
+
+  def tabIndexChanged(self):
+      tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
+      print (tabBar_index)
+      self.setCurrentIndex(tabBar_index)
+
+  def createTileUILayout(self): 
+    #alignment.
+    self._tileLayout.setVerticalSpacing(2)
+    self._tileLayout.setHorizontalSpacing(0)
+
+    #1
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("方位")))
+    directionCombo = qt.QComboBox()
+    directionCombo.setToolTip(self.tr("Select the 方位"))
+    directionCombo.addItem("Axial", 1)
+    directionCombo.addItem("Sagital", 2)
+    directionCombo.addItem("Coronal", 3)
+    directionCombo.setCurrentIndex(0)
+    layoutPre.addWidget(directionCombo)
+
+    #2
+    layoutPre.addWidget(self._createLabel(self.tr("表示枚数")))
+    numCombo = qt.QComboBox()
+    numCombo.setToolTip(self.tr("Select the number"))
+    numCombo.addItem("2x2", 1)
+    numCombo.addItem("3x3", 2)
+    numCombo.addItem("4x4", 3)
+    numCombo.setCurrentIndex(0)
+    layoutPre.addWidget(numCombo)
+    self._tileLayout.addRow(layoutPre)
+ 
+    #3
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self.windowLevelWidget)
+    self._tileLayout.addRow(layoutPre)
+
+    #5
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("投影法")))
+    self.raycastSelector = self.createRaycastCombobox()#レイキャストコンボボックス
+    layoutPre.addWidget(self.raycastSelector,0,1)
+    self._tileLayout.addRow(layoutPre)
+ 
+    #6
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("間隔")))
+    self._tileLayout.addRow(layoutPre)
+    #7
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("位置")))
+    self._tileLayout.addRow(layoutPre)
+    #8
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("")))
+    self.OrientationMarkerCheckBox = qt.QCheckBox(self.tr("マーカー"))
+    self.OrientationMarkerCheckBox.setToolTip(self.tr("マーカーの表示・非表示設定"))
+    toggleCheckBox(self.OrientationMarkerCheckBox, lastCheckedState=True)
+    layoutPre.addWidget(self.OrientationMarkerCheckBox)
+    
+  	#ルーラーのチェックボックス
+    self.rulerCheckBox = qt.QCheckBox(self.tr("ルーラー"))
+    self.rulerCheckBox.setToolTip(self.tr("ルーラーの表示・非表示設定"))
+    toggleCheckBox(self.rulerCheckBox, lastCheckedState=True)
+    layoutPre.addWidget(self.rulerCheckBox)
+    self._tileLayout.addRow(layoutPre)
+
+    #9
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("")))
+    self._tileLayout.addRow(layoutPre)
 
   def addLayoutSection(self):
     self.layoutSection = qt.QFormLayout()
