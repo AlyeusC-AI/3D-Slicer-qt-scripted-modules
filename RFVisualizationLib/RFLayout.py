@@ -18,13 +18,7 @@ class RFLayoutType(IntEnum):
   RFMainCoronalLayout = RFMainAxialLayout + 1
   RFMainSagittalLayout = RFMainCoronalLayout + 1
   RFPanoramaLayout = RFMainSagittalLayout + 1
-  RF2X2Layout = RFPanoramaLayout + 1
-  RF3X3Layout = RFPanoramaLayout + 2
-  RF4X4Layout = RFPanoramaLayout + 3
-  RF5X5Layout = RFPanoramaLayout + 4
-  # RF6X6Layout = RFPanoramaLayout + 5
-  # RF7X7Layout = RFPanoramaLayout + 6
-  # RF8X8Layout = RFPanoramaLayout + 7
+  RFTileLayout = RFPanoramaLayout+ 1
 
 @unique
 class ViewTag(Enum):
@@ -153,8 +147,67 @@ def layoutSetup(layoutManager):
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFMainSagittalLayout, sagittalLayout)
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFPanoramaLayout, panoramaLayout)
 
-  """added tab to current layout"
-     tab付与に時間かかっている。仕様が固まったら最初からtab付与の形を検討する(C++側の変更が必要?)""
+  """create Tile layout"""
+  customLayout = """
+<layout type="tab">
+   <item name="タイルビュー">
+        <layout type=\"vertical\">
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R1</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare2\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R2</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+        </layout>
+    </item>
+    <item name="MainTab">
+        <layout type=\"horizontal\">
+        <item>
+          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
+          <property name=\"orientation\" action=\"default\">Axial</property>
+          <property name=\"viewlabel\" action=\"default\">R</property>
+          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+          </view>
+        </item>
+        </layout>
+    </item>
+ 
+</layout>
+"""
+  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout, customLayout)
+
+  """added tab to current layout
+     tab付与に時間かかっている。仕様が固まったら最初からtab付与の形を検討する(C++側の変更が必要?)"""
   layouts = [
     RFLayoutType.RFConventional,
     RFLayoutType.RFDual3D,
