@@ -604,6 +604,7 @@ class RFViewerHomeWidget(RFViewerWidget):
             self._prevLayout = layoutManager.layout
         else:
             layoutManager.setLayout(self._prevLayout)
+            slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(0)
 
     def changeTileLayout(self):
         layoutManager = slicer.app.layoutManager()
@@ -611,6 +612,8 @@ class RFViewerHomeWidget(RFViewerWidget):
         layoutManager.setLayout(RFLayoutType.RFTileLayout)
         tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
         tabBar.currentChanged.connect(self.tabIndexChanged)
+
+        slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
 
     def loadVisualisationModule(self):
         self._currentWidget = slicer.modules.RFVisualizationWidget
