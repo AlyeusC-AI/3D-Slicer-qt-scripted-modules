@@ -131,6 +131,13 @@ class RFViewerHomeWidget(RFViewerWidget):
 
         # Instantiate Toolbar and module widgets
         self._toolbarWidget = ToolbarWidget()
+        self._toolbarTileWidget = ToolbarWidget()
+
+        self._stackedWidget = qt.QStackedWidget()
+        self._stackedWidget.addWidget(self._toolbarWidget)
+        self._stackedWidget.addWidget(self._toolbarTileWidget)
+        self._stackedWidget.setCurrentIndex(0)
+
         self._patientInfoWidget = qt.QLabel()
         # ---レイアウト変更--- 20221227 koyanagi
         self._showhidebutton = qt.QPushButton()
@@ -144,7 +151,7 @@ class RFViewerHomeWidget(RFViewerWidget):
         self._moduleWidget1 = ModuleWidget()
         # Add toolbar button to the top of the dock to always be visible even on module change
         # When loading RFViewerHome inside of Slicer, toolbar will be displayed under the Slicer logo
-        self.toolbarButton = wrapInCollapsibleButton(self._toolbarWidget, collapsibleText=self.tr("Toolbar"),
+        self.toolbarButton = wrapInCollapsibleButton(self._stackedWidget, collapsibleText=self.tr("Toolbar"),
                                                      isCollapsed=False)
         self.ModulePanel = slicer.util.findChild(
             slicer.util.mainWindow(), "ModulePanel")
@@ -178,6 +185,7 @@ class RFViewerHomeWidget(RFViewerWidget):
         self.layout.addWidget(self._moduleWidget)
 
         # Configure toolbar sections
+        self._configureTileToolbarSection()
         self._configureToolbarFileSection()
         self._configureToolbarReconstructionSection()
         self._configureToolbarAnnotationSection()
@@ -404,6 +412,24 @@ class RFViewerHomeWidget(RFViewerWidget):
             qt.QSettings().setValue("WindowCenter", 3400)
             qt.QSettings().setValue("WindowWidth", 750)
 
+    def captureTileView(self):
+        print("capture!")
+
+    def _configureTileToolbarSection(self):
+        self._toolbarTileWidget.createSection(self.tr("TileView"))
+
+        backToMainButton = createButton(
+            "", self.changeToMainLayout)
+        backToMainButton.setIcon(Icons.leftarrow)
+        self._toolbarTileWidget.addButton(backToMainButton)
+
+        tileCaptureButton = createButton(
+            "", self.captureTileView)
+        tileCaptureButton.setIcon(Icons.rightarrow)
+        self._toolbarTileWidget.addButton(tileCaptureButton)
+
+        self._toolbarTileWidget.createSection()
+
     def _configureToolbarFileSection(self):
         self._toolbarWidget.createSection(self.tr("File"))
        # Save session
@@ -421,7 +447,7 @@ class RFViewerHomeWidget(RFViewerWidget):
         exportDICOMButton.setIcon(Icons.exportDICOM)
         self._toolbarWidget.addButton(exportDICOMButton)
 
-        tileViewButton = createButton("", self.changeTileLayout)
+        tileViewButton = createButton("", self.changeToTileLayout)
         tileViewButton.setIcon(Icons.leftarrow)
         self._toolbarWidget.addButton(tileViewButton)
 
@@ -603,12 +629,19 @@ class RFViewerHomeWidget(RFViewerWidget):
         if tabBar_index == 0:
             self._prevLayout = layoutManager.layout
         else:
+            self._stackedWidget.setCurrentIndex(0)
             layoutManager.setLayout(self._prevLayout)
             slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(0)
 
-    def changeTileLayout(self):
+    def changeToMainLayout(self):
+        layoutManager = slicer.app.layoutManager()
+        self._stackedWidget.setCurrentIndex(0)
+        layoutManager.setLayout(self._prevLayout)
+
+    def changeToTileLayout(self):
         layoutManager = slicer.app.layoutManager()
         self._prevLayout = layoutManager.layout
+        self._stackedWidget.setCurrentIndex(1)
         layoutManager.setLayout(RFLayoutType.RFTileLayout)
         tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
         tabBar.currentChanged.connect(self.tabIndexChanged)
