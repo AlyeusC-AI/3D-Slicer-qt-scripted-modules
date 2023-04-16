@@ -122,21 +122,23 @@ class RFVisualizationUI(qt.QStackedWidget):
     #1
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("方位")))
-    directionCombo = qt.QComboBox()
+    self.directionCombo = qt.QComboBox()
+    directionCombo = self.directionCombo
     directionCombo.setToolTip(self.tr("Select the 方位"))
-    directionCombo.addItem("Axial", 1)
-    directionCombo.addItem("Sagital", 2)
-    directionCombo.addItem("Coronal", 3)
+    directionCombo.addItem("Axial", 0)
+    directionCombo.addItem("Sagital", 1)
+    directionCombo.addItem("Coronal", 2)
     directionCombo.setCurrentIndex(0)
     layoutPre.addWidget(directionCombo)
 
     #2
     layoutPre.addWidget(self._createLabel(self.tr("表示枚数")))
-    numCombo = qt.QComboBox()
+    self.numCombo = qt.QComboBox()
+    numCombo = self.numCombo
     numCombo.setToolTip(self.tr("Select the number"))
-    numCombo.addItem("2x2", 1)
-    numCombo.addItem("3x3", 2)
-    numCombo.addItem("4x4", 3)
+    numCombo.addItem("2x2", 0)
+    numCombo.addItem("3x3", 1)
+    numCombo.addItem("4x4", 2)
     numCombo.setCurrentIndex(0)
     layoutPre.addWidget(numCombo)
     self._tileLayout.addRow(layoutPre)
@@ -180,6 +182,39 @@ class RFVisualizationUI(qt.QStackedWidget):
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("")))
     self._tileLayout.addRow(layoutPre)
+
+    # self.add3DView()
+
+  def add3DView(self):
+    #10(VR View)
+    # layout name is used to create and identify the underlying view node and  should be set to a value that is not used in any of the layouts owned by the layout manager
+    layoutName = "Test3DView"
+    layoutLabel = "T3"
+    layoutColor = [1.0, 1.0, 0.0]
+    # ownerNode manages this view instead of the layout manager (it can be any node in the scene)
+    viewOwnerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScriptedModuleNode")
+
+    # Create MRML node
+    viewNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLViewNode")
+    viewNode.SetLayoutLabel(layoutLabel)
+    viewNode.SetLayoutColor(layoutColor)
+    viewNode.SetAndObserveParentLayoutNodeID(viewOwnerNode.GetID())
+
+    # Create widget
+    viewWidget = slicer.qMRMLThreeDWidget()
+    viewWidget.setMRMLScene(slicer.mrmlScene)
+    viewWidget.setMRMLViewNode(viewNode)
+
+    layoutPre = qt.QVBoxLayout()
+    layoutPre.addWidget(viewWidget)
+    layoutPre.addWidget(slicer.modules.reformat.widgetRepresentation())
+    slicer.modules.reformat.widgetRepresentation().setVisible(True)
+    self._tileLayout.addRow(layoutPre)
+
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("間隔")))
+    self._tileLayout.addRow(layoutPre)
+
 
   def addLayoutSection(self):
     self.layoutSection = qt.QFormLayout()

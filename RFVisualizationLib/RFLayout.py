@@ -18,7 +18,9 @@ class RFLayoutType(IntEnum):
   RFMainCoronalLayout = RFMainAxialLayout + 1
   RFMainSagittalLayout = RFMainCoronalLayout + 1
   RFPanoramaLayout = RFMainSagittalLayout + 1
-  RFTileLayout = RFPanoramaLayout+ 1
+  RFTileLayout2x2 = RFPanoramaLayout+ 1
+  RFTileLayout3x3 = RFTileLayout2x2 + 1
+  RFTileLayout4x4 = RFTileLayout3x3 + 1
 
 @unique
 class ViewTag(Enum):
@@ -148,7 +150,7 @@ def layoutSetup(layoutManager):
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFPanoramaLayout, panoramaLayout)
 
   """create Tile layout"""
-  customLayout = """
+  tileLayout2x2 = """
 <layout type="tab">
    <item name="タイルビュー">
         <layout type=\"vertical\">
@@ -182,7 +184,7 @@ def layoutSetup(layoutManager):
                     <item>
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
-                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewlabel\" action=\"default\">R4</property>
                             <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
@@ -204,7 +206,256 @@ def layoutSetup(layoutManager):
  
 </layout>
 """
-  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout, customLayout)
+
+  tileLayout3x3 = """
+<layout type="tab">
+   <item name="タイルビュー">
+        <layout type=\"vertical\">
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R1</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare2\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R2</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R4</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare5\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R5</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare6\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R6</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare7\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R7</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare8\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R8</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare9\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R9</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+
+        </layout>
+    </item>
+    <item name="MainTab">
+        <layout type=\"horizontal\">
+        <item>
+          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
+          <property name=\"orientation\" action=\"default\">Axial</property>
+          <property name=\"viewlabel\" action=\"default\">R</property>
+          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+          </view>
+        </item>
+        </layout>
+    </item>
+ 
+</layout>
+"""
+
+  tileLayout4x4 = """
+<layout type="tab">
+   <item name="タイルビュー">
+        <layout type=\"vertical\">
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R1</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare2\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R2</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R3</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R4</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare5\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R5</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare6\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R6</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare7\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R7</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare8\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R8</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare9\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R9</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare10\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R10</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare11\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R11</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare12\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R12</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+            <item>
+                <layout type=\"horizontal\">
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare13\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R13</property>
+                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare14\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R14</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare15\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R15</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                    <item>
+                        <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare16\">
+                            <property name=\"orientation\" action=\"default\">Axial</property>
+                            <property name=\"viewlabel\" action=\"default\">R16</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
+                        </view>
+                    </item>
+                </layout>
+            </item>
+        </layout>
+    </item>
+    <item name="MainTab">
+        <layout type=\"horizontal\">
+        <item>
+          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
+          <property name=\"orientation\" action=\"default\">Axial</property>
+          <property name=\"viewlabel\" action=\"default\">R</property>
+          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+          </view>
+        </item>
+        </layout>
+    </item>
+ 
+</layout>
+"""
+
+  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout2x2, tileLayout2x2)
+  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout3x3, tileLayout3x3)
+  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout4x4, tileLayout4x4)
 
   """added tab to current layout
      tab付与に時間かかっている。仕様が固まったら最初からtab付与の形を検討する(C++側の変更が必要?)"""

@@ -181,6 +181,9 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.fractionCheckBox.connect("stateChanged(int)", self.onFractionChanged)#ルーラーの表示・非表示
     #-------------------------------------------
 
+    self.ui.numCombo.connect("currentIndexChanged(int)", self.onTileLayoutChanged)
+    self.ui.directionCombo.connect("currentIndexChanged(int)", self.onTileOrientationChanged)
+
     #20220804_Koyanagi
     # 前回のレイアウト設定の引継ぎ  2022/8/4  小柳
     lastSessionLayout = qt.QSettings().value("MainWindow/layout")
@@ -408,6 +411,26 @@ class RFVisualizationWidget(RFViewerWidget):
     for slice in sliceNodes:
       slice.SetWidgetVisible(self._displayResliceCursor)
 
+  def onTileOrientationChanged(self):
+    if self._isLoadingState:
+      return
+    #setSliceOrientation()
+    index = self.ui.directionCombo.currentData
+
+    orientationList = ["Axial", "Sagittal", "Coronal"]
+    orientation = orientationList[index]
+    for i in range(1, 17):
+      compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
+      compare.setSliceOrientation(orientation)
+
+  def onTileLayoutChanged(self):
+    if self._isLoadingState:
+      return
+
+    TileLayoutNum = self.ui.numCombo.currentData
+    layoutManager = slicer.app.layoutManager()
+    layoutManager.setLayout(RFLayoutType.RFTileLayout2x2 + TileLayoutNum)
+ 
   #--- for cephalometric 20220924 koyanagi --- add
   def onFOVChanged(self):
     # セファロ用の拡大率補正用コンボボックスの値の反映
