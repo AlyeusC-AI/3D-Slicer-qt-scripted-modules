@@ -183,7 +183,7 @@ class RFVisualizationUI(qt.QStackedWidget):
     layoutPre.addWidget(self._createLabel(self.tr("")))
     self._tileLayout.addRow(layoutPre)
 
-    # self.add3DView()
+    self.add3DView()
 
   def add3DView(self):
     #10(VR View)
@@ -205,14 +205,10 @@ class RFVisualizationUI(qt.QStackedWidget):
     viewWidget.setMRMLScene(slicer.mrmlScene)
     viewWidget.setMRMLViewNode(viewNode)
 
-    layoutPre = qt.QVBoxLayout()
-    layoutPre.addWidget(viewWidget)
-    layoutPre.addWidget(slicer.modules.reformat.widgetRepresentation())
-    slicer.modules.reformat.widgetRepresentation().setVisible(True)
-    self._tileLayout.addRow(layoutPre)
-
     layoutPre = qt.QHBoxLayout()
-    layoutPre.addWidget(self._createLabel(self.tr("間隔")))
+    layoutPre.addWidget(slicer.modules.reformat.widgetRepresentation())
+    layoutPre.addWidget(viewWidget)
+    slicer.modules.reformat.widgetRepresentation().setVisible(True)
     self._tileLayout.addRow(layoutPre)
 
 
