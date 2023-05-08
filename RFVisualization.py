@@ -183,6 +183,8 @@ class RFVisualizationWidget(RFViewerWidget):
 
     self.ui.numCombo.connect("currentIndexChanged(int)", self.onTileLayoutChanged)
     self.ui.directionCombo.connect("currentIndexChanged(int)", self.onTileOrientationChanged)
+    self.ui.sliceIntervalSlider.connect("valueChanged(double)", self.onTileIntervalSliderChanged)
+
 
     #20220804_Koyanagi
     # 前回のレイアウト設定の引継ぎ  2022/8/4  小柳
@@ -422,6 +424,20 @@ class RFVisualizationWidget(RFViewerWidget):
     for i in range(1, 17):
       compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
       compare.setSliceOrientation(orientation)
+
+  def onTileIntervalSliderChanged(self):
+    if self._isLoadingState:
+      return
+
+    compare = slicer.app.layoutManager().sliceWidget('Compare1')
+    logic = compare.sliceLogic()
+    interval = self.ui.sliceIntervalSlider.value
+    offset = logic.GetSliceOffset()
+    for i in range(2, 17):
+      offset = offset + interval
+      compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
+      logic = compare.sliceLogic()
+      logic.SetSliceOffset(offset)
 
   def onTileLayoutChanged(self):
     if self._isLoadingState:

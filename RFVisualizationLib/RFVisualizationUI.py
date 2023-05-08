@@ -158,6 +158,16 @@ class RFVisualizationUI(qt.QStackedWidget):
     #6
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("間隔")))
+
+    self.sliceIntervalSlider = qt.QSlider()
+    self.sliceIntervalSlider.singleStep = 1
+    self.sliceIntervalSlider.pageStep = 5
+    self.sliceIntervalSlider.minimum = 1
+    self.sliceIntervalSlider.maximum = 10
+    self.sliceIntervalSlider.setOrientation(qt.Qt.Horizontal)
+    self.sliceIntervalSlider.setValue(1)
+    layoutPre.addWidget(self.sliceIntervalSlider)
+
     self._tileLayout.addRow(layoutPre)
     #7
     layoutPre = qt.QHBoxLayout()
