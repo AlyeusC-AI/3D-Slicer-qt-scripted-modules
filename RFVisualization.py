@@ -186,11 +186,18 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.sliceIntervalSlider.connect("valueChanged(double)", self.onTileIntervalSliderChanged)
 
 
+    #タブビュー機能追加　初期表示変更　タブレイアウト＆SlicerLayoutFourUpView
+    layoutManager = slicer.app.layoutManager()
+    mainLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFDefaultLayout)
+    
+    slicer.modules.RFViewerHomeWidget.centralWidgetLayout(mainLayout,"","",0)
+    #-------------------------------------------
+
     #20220804_Koyanagi
     # 前回のレイアウト設定の引継ぎ  2022/8/4  小柳
-    lastSessionLayout = qt.QSettings().value("MainWindow/layout")
-    self.setSlicerLayout(lastSessionLayout)
-    self.ui.layoutSelector.setCurrentIndex(lastSessionLayout)
+    #lastSessionLayout = qt.QSettings().value("MainWindow/layout")
+    #self.setSlicerLayout(lastSessionLayout)
+    #self.ui.layoutSelector.setCurrentIndex(lastSessionLayout)
     #20220804_Koyanagi_end
 
     # Add vertical spacer
@@ -243,7 +250,24 @@ class RFVisualizationWidget(RFViewerWidget):
     # if layoutType > RFLayoutType.RFPanoramaLayout:
     #   layoutType = RFLayoutType.RFMainAxialLayout
     
-    self._layoutManager.setLayout(layoutType)
+    #self._layoutManager.setLayout(layoutType)
+    
+    #タブビュー機能追加　タブレイアウトへ各レイアウト設定の入れ込み
+    layoutManager = slicer.app.layoutManager()
+    mainLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(self.ui.layoutSelector.currentData)
+    tileLayout = ""
+    
+    if slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar"):
+      #TileTabBarOn
+      if slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").isTabEnabled(1):
+        TileLayoutNum = self.ui.numCombo.currentData
+        tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout2x2 + TileLayoutNum)
+      #panoramicTabBarOn #パノラミック時に追加予定
+      #if  = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").isTabEnabled(2):
+    
+    slicer.modules.RFViewerHomeWidget.centralWidgetLayout(mainLayout,tileLayout,"",0)
+    #-------------------------------------------
+    
     if newLayout == RFLayoutType.RFTriple3D or newLayout == RFLayoutType.RFDual3D:
       self.setVRMode(self._currentVRMode)
       views = getAll3DViewNodes()
@@ -254,17 +278,17 @@ class RFVisualizationWidget(RFViewerWidget):
     # Apply slab thickness on new slice views
     self.onSlabThicknessSliderChanged()
     
-    lm = slicer.app.layoutManager()
-    if newLayout == RFLayoutType.RF2X2Layout:
-      lm.sliceWidget("Red").sliceController().setLightbox(2, 2)
-    elif newLayout == RFLayoutType.RF3X3Layout:
-      lm.sliceWidget("Red").sliceController().setLightbox(3, 3)
-    elif newLayout == RFLayoutType.RF4X4Layout:
-      lm.sliceWidget("Red").sliceController().setLightbox(4, 4)
-    elif newLayout == RFLayoutType.RF5X5Layout:
-      lm.sliceWidget("Red").sliceController().setLightbox(5, 5)
-    else:
-      lm.sliceWidget("Red").sliceController().setLightbox(1, 1)
+    #lm = slicer.app.layoutManager()
+    #if newLayout == RFLayoutType.RF2X2Layout:
+    #  lm.sliceWidget("Red").sliceController().setLightbox(2, 2)
+    #elif newLayout == RFLayoutType.RF3X3Layout:
+    #  lm.sliceWidget("Red").sliceController().setLightbox(3, 3)
+    #elif newLayout == RFLayoutType.RF4X4Layout:
+    #  lm.sliceWidget("Red").sliceController().setLightbox(4, 4)
+    #elif newLayout == RFLayoutType.RF5X5Layout:
+    #  lm.sliceWidget("Red").sliceController().setLightbox(5, 5)
+    #else:
+    #  lm.sliceWidget("Red").sliceController().setLightbox(1, 1)
     # if newLayout == RFLayoutType.RF6X6Layout:
     #   lm.sliceWidget("Red").sliceController().setLightbox(6, 6)
     # if newLayout == RFLayoutType.RF7X7Layout:
@@ -443,9 +467,14 @@ class RFVisualizationWidget(RFViewerWidget):
     if self._isLoadingState:
       return
 
-    TileLayoutNum = self.ui.numCombo.currentData
+    #タブビュー機能追加　タブレイアウトへ各レイアウト設定の入れ込み
     layoutManager = slicer.app.layoutManager()
-    layoutManager.setLayout(RFLayoutType.RFTileLayout2x2 + TileLayoutNum)
+    
+    TileLayoutNum = self.ui.numCombo.currentData
+    tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout2x2 + TileLayoutNum)
+    
+    slicer.modules.RFViewerHomeWidget.centralWidgetLayout("",tileLayout,"",1)
+    #-------------------------------------------
  
   #--- for cephalometric 20220924 koyanagi --- add
   def onFOVChanged(self):

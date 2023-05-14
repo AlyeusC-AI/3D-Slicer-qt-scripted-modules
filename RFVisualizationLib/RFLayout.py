@@ -21,6 +21,8 @@ class RFLayoutType(IntEnum):
   RFTileLayout2x2 = RFPanoramaLayout+ 1
   RFTileLayout3x3 = RFTileLayout2x2 + 1
   RFTileLayout4x4 = RFTileLayout3x3 + 1
+  RFTabLayoutBase = RFTileLayout4x4 + 1 #タミーのタブレイアウト
+  RFTabLayout = RFTabLayoutBase + 1 #実際に使用するタブレイアウト
 
 @unique
 class ViewTag(Enum):
@@ -89,8 +91,6 @@ def layoutSetup(layoutManager):
   """
 
   globalLayout = r"""
-  <layout type="tab">
-  <item name="MainTab">
   <layout type="horizontal" split="true" >
     <item splitSize="500">
       {mainView}
@@ -109,14 +109,9 @@ def layoutSetup(layoutManager):
       </layout>
     </item>
   </layout>
-
-  </item>
-  </layout>
   """
 
   panoramaLayout = r"""
-  <layout type="tab">
-  <item name="MainTab">
   <layout type="vertical" split="true" >
     <item splitSize="400">
       {mainView}
@@ -135,9 +130,6 @@ def layoutSetup(layoutManager):
       </layout>
     </item>
   </layout>
-
-  </item>
-  </layout>
   """.format(mainView=panoramaFrontView, subViewTop=panoramaLateralView, subViewMiddle=axialView, subViewBottom=view3D)
 
   axialLayout = globalLayout.format(mainView=axialView, subViewTop=view3D, subViewMiddle=sagittalView, subViewBottom=coronalView)
@@ -151,8 +143,6 @@ def layoutSetup(layoutManager):
 
   """create Tile layout"""
   tileLayout2x2 = """
-<layout type="tab">
-   <item name="タイルビュー">
         <layout type=\"vertical\">
             <item>
                 <layout type=\"horizontal\">
@@ -191,25 +181,9 @@ def layoutSetup(layoutManager):
                 </layout>
             </item>
         </layout>
-    </item>
-    <item name="MainTab">
-        <layout type=\"horizontal\">
-        <item>
-          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
-          <property name=\"orientation\" action=\"default\">Axial</property>
-          <property name=\"viewlabel\" action=\"default\">R</property>
-          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-          </view>
-        </item>
-        </layout>
-    </item>
- 
-</layout>
 """
 
   tileLayout3x3 = """
-<layout type="tab">
-   <item name="タイルビュー">
         <layout type=\"vertical\">
             <item>
                 <layout type=\"horizontal\">
@@ -286,27 +260,10 @@ def layoutSetup(layoutManager):
                     </item>
                 </layout>
             </item>
-
         </layout>
-    </item>
-    <item name="MainTab">
-        <layout type=\"horizontal\">
-        <item>
-          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
-          <property name=\"orientation\" action=\"default\">Axial</property>
-          <property name=\"viewlabel\" action=\"default\">R</property>
-          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-          </view>
-        </item>
-        </layout>
-    </item>
- 
-</layout>
 """
 
   tileLayout4x4 = """
-<layout type="tab">
-   <item name="タイルビュー">
         <layout type=\"vertical\">
             <item>
                 <layout type=\"horizontal\">
@@ -437,44 +394,32 @@ def layoutSetup(layoutManager):
                 </layout>
             </item>
         </layout>
-    </item>
-    <item name="MainTab">
-        <layout type=\"horizontal\">
-        <item>
-          <view class=\"vtkMRMLSliceNode\" singletontag=\"Red\">
-          <property name=\"orientation\" action=\"default\">Axial</property>
-          <property name=\"viewlabel\" action=\"default\">R</property>
-          <property name=\"viewcolor\" action=\"default\">#F34A33</property>
-          </view>
-        </item>
-        </layout>
-    </item>
- 
-</layout>
 """
 
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout2x2, tileLayout2x2)
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout3x3, tileLayout3x3)
   layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTileLayout4x4, tileLayout4x4)
 
-  """added tab to current layout
-     tab付与に時間かかっている。仕様が固まったら最初からtab付与の形を検討する(C++側の変更が必要?)"""
-  layouts = [
-    RFLayoutType.RFConventional,
-    RFLayoutType.RFDual3D,
-    RFLayoutType.RFTriple3D,
-    RFLayoutType.RF3DOnly,
-    RFLayoutType.RFAxialOnly,
-    RFLayoutType.RFDefaultLayout,
-    RFLayoutType.RFMain3DLayout,
-    RFLayoutType.RFLineProfileLayout]
+  """タブレイアウトについて
+     RFTabLayoutBaseに、タミーのタブレイアウト情報を作成し
+     これをベースに、RFTabLayoutへ各レイアウト情報と合わせて入れ込んでいき
+     レイアウトを作成しています"""
 
-  for l in layouts:
-    layout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(l)
-    tabLayout = ''.join(['<layout type="tab"> <item name="MainTab">',
-                        layout,
-                        '</item> </layout>'])
-    layoutManager.layoutLogic().GetLayoutNode().SetLayoutDescription(l, tabLayout)
+  tabLayoutBase = """
+    <layout type="tab">
+     <item name="メインビュー">
+      {mainLayout}
+     </item>
+     <item name="タイルビュー">
+      {tileLayout}
+     </item>
+     <item name="パノラミックビュー">
+      {panoramicLayout}
+     </item>
+    </layout>
+    """
+
+  layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTabLayoutBase, tabLayoutBase)
 
 def layoutBackgroundSetup(viewNode):
   viewNode.SetBackgroundColor(0.5, 0.5, 0.5)

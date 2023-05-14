@@ -623,29 +623,78 @@ class RFViewerHomeWidget(RFViewerWidget):
             msg.addButton("OK", qt.QMessageBox.NoRole)
             msgAttached.exec_()
     def tabIndexChanged(self, index):
-        layoutManager = slicer.app.layoutManager()
-        tabBar_index = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").currentIndex
-        print (tabBar_index)
-        if tabBar_index > 0:
+        print (index)
+        #ツールバー変更
+        if index == 1:
+            self._stackedWidget.setCurrentIndex(1)
+            slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
+        else:
             self._stackedWidget.setCurrentIndex(0)
-            layoutManager.setLayout(self._prevLayout)
             slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(0)
 
     def changeToMainLayout(self):
-        layoutManager = slicer.app.layoutManager()
+        #タイルビューを削除　意図が違いましたら修正お願い致します。
+        self.centralWidgetLayout("","","",0)
+        #ツールバー変更
         self._stackedWidget.setCurrentIndex(0)
-        layoutManager.setLayout(self._prevLayout)
         slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(0)
 
     def changeToTileLayout(self):
+    	#タイルビューの作成　意図が違いましたら修正お願い致します。
+        #タイルビュー追加（タブビュー付き）
         layoutManager = slicer.app.layoutManager()
-        self._prevLayout = layoutManager.layout
+        
+        #既にタイルビューある場合、処理検討中
+        if not slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").isTabEnabled(1):
+            tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
+        else:
+            #初期値は４×４
+            tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
+        #タイルビューの初期表示４×４にしており、ここで一括で変更している為、セレクタの中身の変更をお願い致します。
+        
+        self.centralWidgetLayout("",tileLayout,"",1)
+        #タイルビューのスライス画面のメニュー削除　別途修正お願い致します。
+        slicer.app.layoutManager().sliceWidget("Compare1").sliceController().setVisible(False)
+        slicer.app.layoutManager().sliceWidget("Compare2").sliceController().setVisible(False)
+        slicer.app.layoutManager().sliceWidget("Compare3").sliceController().setVisible(False)
+        slicer.app.layoutManager().sliceWidget("Compare4").sliceController().setVisible(False)
+        
+        #ツールバー変更
         self._stackedWidget.setCurrentIndex(1)
-        layoutManager.setLayout(RFLayoutType.RFTileLayout2x2)
+        slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
+
+    def centralWidgetLayout(self, mainViewLayout, tileViewLayout, panoramicViewLayout, tabSetIndex):
+        #センターウィジェットのレイアウト管理部　新規作成部になります。
+        """
+           mainViewLayout メインビューのレイアウト設定
+                          変更したい場合 LayoutDescription を入力　未変更は ""　を入力（基本は""でOK）
+           tileViewLayout/panoramicViewLayout タイルビューとパノラマビューのレイアウト設定
+                          変更したい場合 LayoutDescription を入力、""を入力するとタブが削除
+           tabSetIndex   タブの切り替え
+                         入力した番号のタブで画面を表示する
+        """
+        #タブビュー機能追加　タブレイアウトへ各レイアウト設定の入れ込み
+        layoutManager = slicer.app.layoutManager()
+        tabBaseLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTabLayoutBase)
+        mainLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(slicer.modules.RFVisualizationWidget.ui.layoutSelector.currentData)
+        tileLayout = ""
+        panoramicLayout = ""#今後の拡張用
+        
+        if not mainViewLayout == "":
+           mainLayout = mainViewLayout
+        if not tileViewLayout == "":
+           tileLayout = tileViewLayout
+        if not panoramicViewLayout == "":
+           panoramicLayout = panoramicViewLayout
+        tabAddLayout = tabBaseLayout.format(mainLayout=mainLayout, tileLayout=tileLayout, panoramicLayout=panoramicLayout)
+        
+        if not layoutManager.layoutLogic().GetLayoutNode().SetLayoutDescription(RFLayoutType.RFTabLayout, tabAddLayout):
+           layoutManager.layoutLogic().GetLayoutNode().AddLayoutDescription(RFLayoutType.RFTabLayout, tabAddLayout)
+        layoutManager.setLayout(RFLayoutType.RFTabLayout)
+    	
         tabBar = slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar")
         tabBar.currentChanged.connect(self.tabIndexChanged)
-
-        slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
+        tabBar.setCurrentIndex(tabSetIndex)#レイアウト後、コネクトが切れる為、シグナルを有効にしてからタブをセット
 
     def loadVisualisationModule(self):
         self._currentWidget = slicer.modules.RFVisualizationWidget
