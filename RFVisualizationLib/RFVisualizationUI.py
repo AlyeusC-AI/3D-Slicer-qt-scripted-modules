@@ -139,7 +139,7 @@ class RFVisualizationUI(qt.QStackedWidget):
     numCombo.addItem("2x2", 0)
     numCombo.addItem("3x3", 1)
     numCombo.addItem("4x4", 2)
-    numCombo.setCurrentIndex(0)
+    numCombo.setCurrentIndex(2)
     layoutPre.addWidget(numCombo)
     self._tileLayout.addRow(layoutPre)
  
