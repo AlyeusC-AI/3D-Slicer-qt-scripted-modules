@@ -183,7 +183,10 @@ class RFVisualizationWidget(RFViewerWidget):
 
     self.ui.numCombo.connect("currentIndexChanged(int)", self.onTileLayoutChanged)
     self.ui.directionCombo.connect("currentIndexChanged(int)", self.onTileOrientationChanged)
-    self.ui.sliceIntervalSlider.connect("valueChanged(double)", self.onTileIntervalSliderChanged)
+    self.ui.sliceIntervalSlider.connect("valueChanged(int)", self.onTileIntervalSliderChanged)
+    self.ui.sliceIntervalSelector.connect("currentIndexChanged(int)", self.onTileIntervalSelectorChanged)
+    self.ui.slicePositionSlider.connect("valueChanged(int)", self.onTilePositionSliderChanged)
+    self.ui.slicePositionSelector.connect("currentIndexChanged(int)", self.onTilePositionSelectorChanged)
 
 
     #タブビュー機能追加　初期表示変更　タブレイアウト＆SlicerLayoutFourUpView
@@ -456,12 +459,47 @@ class RFVisualizationWidget(RFViewerWidget):
     compare = slicer.app.layoutManager().sliceWidget('Compare1')
     logic = compare.sliceLogic()
     interval = self.ui.sliceIntervalSlider.value
+
+    self.ui.sliceIntervalText.setText(str(interval) + " mm")
     offset = logic.GetSliceOffset()
     for i in range(2, 17):
       offset = offset + interval
       compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
       logic = compare.sliceLogic()
       logic.SetSliceOffset(offset)
+
+  def onTileIntervalSelectorChanged(self):
+    if self._isLoadingState:
+      return
+    
+    interval = self.ui.sliceIntervalSelector.currentData
+    self.ui.sliceIntervalSlider.setValue(interval)
+
+  def onTilePositionSliderChanged(self):
+    if self._isLoadingState:
+      return
+
+    compare = slicer.app.layoutManager().sliceWidget('Compare1')
+    logic = compare.sliceLogic()
+    posOffset = self.ui.slicePositionSlider.value
+
+    logic.SetSliceOffset(posOffset)
+    offset = logic.GetSliceOffset()
+    interval = self.ui.sliceIntervalSlider.value
+    for i in range(2, 17):
+      offset = offset + interval
+      compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
+      logic = compare.sliceLogic()
+      logic.SetSliceOffset(offset)
+
+
+
+  def onTilePositionSelectorChanged(self):
+    if self._isLoadingState:
+      return
+    
+    offset = self.ui.sliceIntervalSelector.currentData
+    self.ui.slicePositionSlider.setValue(offset)
 
   def onTileLayoutChanged(self):
     if self._isLoadingState:

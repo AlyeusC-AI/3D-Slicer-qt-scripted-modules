@@ -144,8 +144,23 @@ class RFVisualizationUI(qt.QStackedWidget):
     self._tileLayout.addRow(layoutPre)
  
     #3
+    self._tileLayout.addRow(self._createSeparator())
+  	#2Dレベルのレイアウト
     layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("２Ｄ")),0,0x20) #上寄せ
+    layoutPre.addWidget(self._createLabel(self.tr("レベル")),0,0x20) #上寄せ self.tr("2D Window/Level: ")
     layoutPre.addWidget(self.windowLevelWidget)
+    self._tileLayout.addRow(layoutPre)
+
+    #4
+    self._tileLayout.addRow(self._createSeparator())
+    layoutPre = qt.QHBoxLayout()
+    layoutPre.addWidget(self._createLabel(self.tr("断層厚")))#self.tr("MIP thickness: ")
+    self.thicknessText = qt.QLabel() #厚み表示
+    self.thicknessText.setStyleSheet("QLabel {min-width: 50px; max-width: 50px;}")
+    layoutPre.addWidget(self.thicknessText)
+    layoutPre.addWidget(self.slabThicknessSlider)
+    layoutPre.addWidget(self.thicknessSelector)
     self._tileLayout.addRow(layoutPre)
 
     #5
@@ -158,20 +173,41 @@ class RFVisualizationUI(qt.QStackedWidget):
     #6
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("間隔")))
+    self.sliceIntervalText = qt.QLabel() #間隔表示
+    self.sliceIntervalText.setStyleSheet("QLabel {min-width: 50px; max-width: 50px;}")
+    layoutPre.addWidget(self.sliceIntervalText)
 
     self.sliceIntervalSlider = qt.QSlider()
     self.sliceIntervalSlider.singleStep = 1
     self.sliceIntervalSlider.pageStep = 5
     self.sliceIntervalSlider.minimum = 1
-    self.sliceIntervalSlider.maximum = 10
+    self.sliceIntervalSlider.maximum = 100
     self.sliceIntervalSlider.setOrientation(qt.Qt.Horizontal)
     self.sliceIntervalSlider.setValue(1)
     layoutPre.addWidget(self.sliceIntervalSlider)
 
+    self.sliceIntervalSelector = self.createSliceIntervalCombobox()
+    layoutPre.addWidget(self.sliceIntervalSelector)
     self._tileLayout.addRow(layoutPre)
+
     #7
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("位置")))
+
+    self.slicePositionSlider = qt.QSlider()
+    self.slicePositionSlider.singleStep = 1
+    self.slicePositionSlider.pageStep = 5
+    self.slicePositionSlider.minimum = 1
+    self.slicePositionSlider.maximum = 100
+    self.slicePositionSlider.setOrientation(qt.Qt.Horizontal)
+    self.slicePositionSlider.setValue(1)
+    layoutPre.addWidget(self.slicePositionSlider)
+
+    self.slicePositionSelector = self.createSlicePositionCombobox()
+    layoutPre.addWidget(self.slicePositionSelector)
+    self._tileLayout.addRow(layoutPre)
+
+
     self._tileLayout.addRow(layoutPre)
     #8
     layoutPre = qt.QHBoxLayout()
@@ -771,6 +807,51 @@ class RFVisualizationUI(qt.QStackedWidget):
     #selector.setStyleSheet("""
     #    QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 60px; min-width: 60px;}
     #    QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray;}""")#レイアウト変更
+    selector.setStyleSheet("""
+        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
+    return selector
+
+  def createSliceIntervalCombobox(self):
+    """
+    Create a combobox to choose the interval of slice of tile view
+    """
+    selector = qt.QComboBox()
+    selector.setToolTip(self.tr("Select the interval of slice of tile view (xx mm)"))
+    # 任意の値に設定してください
+    selector.addItem(self.tr("0.2mm"), 0.2)
+    selector.addItem(self.tr("0.5mm"), 0.5)
+    selector.addItem(self.tr("1mm"), 1)
+    selector.addItem(self.tr("5mm"), 5)
+    selector.addItem(self.tr("10mm"), 10)
+    selector.addItem(self.tr("80mm"), 80)
+    selector.addItem(self.tr("100mm"), 100)
+    selector.addItem(self.tr("120mm"), 120)
+    selector.addItem(self.tr("140mm"), 140)
+    selector.addItem(self.tr("160mm"), 160)
+    selector.addItem(self.tr("180mm"), 180)
+    selector.setCurrentText(self.tr("80mm"))
+    selector.setStyleSheet("""
+        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
+        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
+    return selector
+
+  def createSlicePositionCombobox(self):
+    selector = qt.QComboBox()
+    selector.setToolTip(self.tr("Select the position of slice of tile view (xx mm)"))
+    # 任意の値に設定してください
+    selector.addItem(self.tr("0.2mm"), 0.2)
+    selector.addItem(self.tr("0.5mm"), 0.5)
+    selector.addItem(self.tr("1mm"), 1)
+    selector.addItem(self.tr("5mm"), 5)
+    selector.addItem(self.tr("10mm"), 10)
+    selector.addItem(self.tr("80mm"), 80)
+    selector.addItem(self.tr("100mm"), 100)
+    selector.addItem(self.tr("120mm"), 120)
+    selector.addItem(self.tr("140mm"), 140)
+    selector.addItem(self.tr("160mm"), 160)
+    selector.addItem(self.tr("180mm"), 180)
+    selector.setCurrentText(self.tr("80mm"))
     selector.setStyleSheet("""
         QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
         QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
