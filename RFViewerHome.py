@@ -653,11 +653,10 @@ class RFViewerHomeWidget(RFViewerWidget):
         #タイルビューの初期表示４×４にしており、ここで一括で変更している為、セレクタの中身の変更をお願い致します。
         
         self.centralWidgetLayout("",tileLayout,"",1)
-        #タイルビューのスライス画面のメニュー削除　別途修正お願い致します。
-        slicer.app.layoutManager().sliceWidget("Compare1").sliceController().setVisible(False)
-        slicer.app.layoutManager().sliceWidget("Compare2").sliceController().setVisible(False)
-        slicer.app.layoutManager().sliceWidget("Compare3").sliceController().setVisible(False)
-        slicer.app.layoutManager().sliceWidget("Compare4").sliceController().setVisible(False)
+
+        #タイルビューのスライス画面のメニュー削除
+        for i in range(1, 17):
+            slicer.app.layoutManager().sliceWidget("Compare" + str(i)).sliceController().setVisible(False)
         
         #ツールバー変更
         self._stackedWidget.setCurrentIndex(1)
