@@ -2,4 +2,4 @@ __pycache__/
 *.py[cod]
 ptvsd/
 launch.json
-settings.json
+settings.jsonSlicerDebuggingTools/ 

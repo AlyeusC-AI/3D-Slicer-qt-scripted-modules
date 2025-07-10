@@ -72,9 +72,12 @@ class RFVisualizationWidget(RFViewerWidget):
 
     self._updatingSliceNodes = False
     self._updatingSephaloCorrectionValue = False
+    self._selectedTileIndex = 0
     sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
-    for sliceNode in sliceNodes:
-      sliceNode.zoomChangeObserverTag = sliceNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.sliceModified)
+    
+    #タイルビュー用フラグ
+    self.tileViewSyncFlg = False
+    self.compareNodes = None
 
   def getVolumeDisplayNode3D(self):
     return self._vrLogic.GetFirstVolumeRenderingDisplayNode(self.volumeNode)
@@ -183,10 +186,9 @@ class RFVisualizationWidget(RFViewerWidget):
 
     self.ui.numCombo.connect("currentIndexChanged(int)", self.onTileLayoutChanged)
     self.ui.directionCombo.connect("currentIndexChanged(int)", self.onTileOrientationChanged)
-    self.ui.sliceIntervalSlider.connect("valueChanged(int)", self.onTileIntervalSliderChanged)
+    self.ui.sliceIntervalSlider.connect("valueChanged(double)", self.onTileIntervalSliderChanged)
     self.ui.sliceIntervalSelector.connect("currentIndexChanged(int)", self.onTileIntervalSelectorChanged)
-    self.ui.slicePositionSlider.connect("valueChanged(int)", self.onTilePositionSliderChanged)
-    self.ui.slicePositionSelector.connect("currentIndexChanged(int)", self.onTilePositionSelectorChanged)
+    self.ui.slicePositionSlider.connect("valueChanged(double)", self.onTilePositionSliderChanged)
 
 
     #タブビュー機能追加　初期表示変更　タブレイアウト＆SlicerLayoutFourUpView
@@ -206,19 +208,21 @@ class RFVisualizationWidget(RFViewerWidget):
     # Add vertical spacer
     self.layout.addStretch(1)
 
-  def sliceModified(self, caller, event):
-    # if self._updatingSliceNodes:
-    #   # prevent infinite loop of slice node updates triggering slice node updates
-    #   return
-    if self._updatingSephaloCorrectionValue:
-      return
-    self._updatingSliceNodes = True
-    fov = caller.GetFieldOfView()[0]
+  #def sliceModified(self, caller, event):
+  #  # if self._updatingSliceNodes:
+  #  #   # prevent infinite loop of slice node updates triggering slice node updates
+  #  #   return
+  #  if self._updatingSephaloCorrectionValue:
+  #    return
+  #  self._updatingSliceNodes = True
+  #  fov = caller.GetFieldOfView()[0]
+  #
+  #  FOV = self.ui.FOVSelector.currentData
+  #  if fov != FOV:
+  #    self.ui.FOVSelector.setCurrentText(self.tr(""))
+  #  self._updatingSliceNodes = False
 
-    FOV = self.ui.FOVSelector.currentData
-    if fov != FOV:
-      self.ui.FOVSelector.setCurrentText(self.tr(""))
-    self._updatingSliceNodes = False
+
 
   def _defaultIndustry3DPreset(self):
     """Get the default industry 3D rendering preset"""
@@ -440,33 +444,281 @@ class RFVisualizationWidget(RFViewerWidget):
     for slice in sliceNodes:
       slice.SetWidgetVisible(self._displayResliceCursor)
 
+    # タイルビュー画面の断層軸は非表示
+    if slicer.app.layoutManager().sliceWidget('Compare1'):
+      for i in range(1, 17):
+        compareNode = slicer.app.layoutManager().sliceWidget('Compare' + str(i)).mrmlSliceNode()
+        compareNode.SetWidgetVisible(0)
+        compareLogic = slicer.app.applicationLogic().GetSliceLogic(compareNode)
+        compareCompositeNode = compareLogic.GetSliceCompositeNode()
+        compareCompositeNode.SetSliceIntersectionVisibility(0)
+
+
+  #------------------------#
+  #---　タイルビュー用　---#
+  #------------------------#
+  #タイルビュー初期化
+  def tileViewSetup(self):
+    if self._isLoadingState:
+      return
+    print("TileView_Setup")
+
+    #タイルビューのレイアウトスタイル設定　マウスホバー時の枠設定
+    self.tileViewLaoutStyle()
+    
+    if self.tileViewSyncFlg:
+      self.tileViewSync(False)
+    
+    #defaultOrientation = "Axial"
+    defaultSliceLabel = "Red"
+    defaultSliceInterval = 10
+    
+    self.tileSliceViewSet(defaultSliceLabel,defaultSliceInterval)
+
+    tile3DView = None
+    l = []
+    layoutManager = slicer.app.layoutManager()
+    for threeDViewIndex in range(layoutManager.threeDViewCount):
+      view = layoutManager.threeDWidget(threeDViewIndex).threeDView()
+      threeDViewNode = view.mrmlViewNode()
+      l.append(threeDViewNode .GetID())
+      if threeDViewNode.GetLayoutName() == "Tile3DView":
+        tile3DView = view
+        tile3DViewNode = threeDViewNode
+    
+    #背景色の設定
+    tile3DViewNode.SetBackgroundColor(0.5,0.5,0.5)
+    tile3DViewNode.SetBackgroundColor2(0.8,0.8,0.8)
+    
+    referenceVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
+    volRenLogic = slicer.modules.volumerendering.logic()
+    displayNode = volRenLogic.CreateDefaultVolumeRenderingNodes(referenceVolumeNode)
+    displayNode.SetViewNodeIDs(l)#データ空の時エラーでる。
+    displayNode.SetVisibility(True)
+    #３D表示位置リセット
+    tile3DView.resetFocalPoint()
+    
+    #連動用の割り込み処理許可
+    self.ui.customMouseActionTile2D()
+    #３Dのマウス操作はウィジェット内で行っています。
+    #self.tileViewSync(True)
+    self.tileViewSyncOn()
+    self.tileViewSelectSliceVisible(True)
+
+
+  def tileSliceViewSet(self, sliceLabel, SliceInterval):
+    #表示画像の座標データ
+    baseSliceNode = slicer.app.layoutManager().sliceWidget(sliceLabel).mrmlSliceNode()
+    baseSliceOffset = baseSliceNode.GetSliceOffset()
+    baseSliceToRas = baseSliceNode.GetSliceToRAS()
+    transform=vtk.vtkTransform()
+    transform.SetMatrix(baseSliceToRas)
+    
+    #表示画像の表示データID　新規スライスへ表示するデータを設定
+    sliceNode = slicer.app.layoutManager().sliceWidget(sliceLabel).mrmlSliceNode()
+    sliceLogic = slicer.app.applicationLogic().GetSliceLogic(sliceNode)
+    compositeNode = sliceLogic.GetSliceCompositeNode()
+    BackgroundVolumeID = compositeNode.GetBackgroundVolumeID()
+    
+    baseFOV = sliceNode.GetFieldOfView()
+    baseXYZOrigin = sliceNode.GetXYZOrigin()
+    
+    slicer.compareWidgets = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)) for i in range(1, 17)]
+
+    #UI関係の初期化
+    #スライドバーの値を更新　最終は画像サイズに合わせる（min max）
+    self.ui.slicePositionSlider.minimum = baseSliceOffset - 100 #仮
+    self.ui.slicePositionSlider.maximum = baseSliceOffset + 100 #仮
+    self.ui.slicePositionSlider.setValue(baseSliceOffset)
+
+    #方位コンボボックスを初期化
+    if sliceLabel == "Red":
+      orientationIndex = 0
+    elif sliceLabel == "Yellow":
+      orientationIndex = 1
+    elif sliceLabel == "Green":
+      orientationIndex = 2
+    self.ui.directionCombo.setCurrentIndex(orientationIndex)
+    #スライスインターバルの初期化
+    self.ui.sliceIntervalSlider.setValue(SliceInterval)
+    
+    for compareWidget in slicer.compareWidgets:
+      #compareWidget.mrmlSceneChanged
+      #表示するデータを設定
+      compareNode = compareWidget.mrmlSliceNode()
+      compareLogic = slicer.app.applicationLogic().GetSliceLogic(compareNode)
+      compareCompositeNode = compareLogic.GetSliceCompositeNode()
+      compareCompositeNode.SetBackgroundVolumeID(BackgroundVolumeID)
+      compareCompositeNode.SetInteractionFlags(0)
+      #向き設定
+      #compareWidget.setSliceOrientation(defaultOrientation)
+      #ベースデータの座標コピー
+      compareNode = compareWidget.mrmlSliceNode()
+      compareSliceToRas = compareNode.GetSliceToRAS()
+      compareSliceToRas.DeepCopy(transform.GetMatrix())
+      compareNode.UpdateMatrices()
+      #位置関係コピー
+      #オフセット値　FOV設定　XYZOrigin
+      compareNode.SetSliceOffset(baseSliceOffset)
+      #compareNode.SetFieldOfView(*baseFOV) #縦横サイズがずれる為、一旦削除
+      compareNode.SetXYZOrigin(*baseXYZOrigin)
+      #オフセット値　インクリメント
+      baseSliceOffset = baseSliceOffset + SliceInterval
+      compareNode.Modified()
+      #Intersection（断層軸）非表示
+      compareCompositeNode.SetSliceIntersectionVisibility(0)
+      compareNode.SetWidgetVisible(0)
+    
+    #タイルビューのFOV設定
+    for compareWidget in slicer.compareWidgets:
+      compareLogic = compareWidget.sliceLogic()
+      compareLogic.FitFOVToBackground(200)
+      compareLogic.Modified()
+
+
+  #シンク状態だとレイアウト削除後に位置情報を見失い次起動時に表示されない為
+  #シンク機能を切ってからセットアップした方がよい
+  def tileViewEnd(self):
+    if self._isLoadingState:
+      return
+    self.tileViewSync(False)
+    self.tileViewSelectSliceVisible(False)
+
+  def tileViewLaoutStyle(self):
+    #タイルビュー画面　マウスホバー時の枠設定
+    slicer.compareWidgets = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)) for i in range(1, 17)]
+    for compareWidget in slicer.compareWidgets:
+      compareWidget.setStyleSheet("QWidget {border:2px solid black;}" "QWidget:hover {border: 2px solid red ;}")
+
+  def tileViewSync(self, syncOn):
+    #タイルビュー画面　拡大・移動・スライスオフセットの同期化　割り込み設定
+    #compareNodes = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)).mrmlSliceNode() for i in range(1, 17)]
+    if not syncOn:
+      #print ("syncoff")
+      self.tileViewSyncFlg = False
+      #for compareNode in compareNodes:
+        #リムーブできない為、一旦Observerのまま処理する形にする。
+        #compareNode.RemoveObserver(compareNode.tileViewChangeObserverTag)
+    else:
+      self.tileViewSyncFlg = True
+      #for compareNode in compareNodes:
+        #compareNode.tileViewChangeObserverTag = compareNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.tileSliceModified)
+        #self.tileViewSyncFlg = True
+
+  def tileViewSyncOn(self):
+    compareNodes = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)).mrmlSliceNode() for i in range(1, 17)]
+    for compareNode in compareNodes:
+      compareNode.tileViewChangeObserverTag = compareNode.AddObserver(vtk.vtkCommand.ModifiedEvent, self.tileSliceModified)
+      self.tileViewSyncFlg = True
+
+
+  def tileSliceModified(self, caller, event):
+    if not self.tileViewSyncFlg:
+      return
+    #タイルビュー画面　拡大・移動・スライスオフセットの同期化
+    compareNodes = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)).mrmlSliceNode() for i in range(1, 17)]
+    #if slicer.updatingSliceNodes:
+    #  # prevent infinite loop of slice node updates triggering slice node updates
+    #  return
+    #slicer.updatingSliceNodes = True
+    fov = caller.GetFieldOfView()
+    XYZori = caller.GetXYZOrigin()
+    offset = caller.GetSliceOffset()
+    node_No = 0
+    cnt = 0
+    for compareNode in compareNodes:
+      if compareNode != caller:
+        compareNode.SetFieldOfView(*fov)
+        compareNode.SetXYZOrigin(*XYZori)
+        cnt = cnt + 1
+      if compareNode == caller:
+        node_No = cnt
+    
+    cnt = 0
+    interval = self.ui.sliceIntervalSlider.value
+    calcCompare1_Offset = offset - (node_No * interval)
+    currentCompare1_Offset = slicer.app.layoutManager().sliceWidget('Compare1').mrmlSliceNode().GetSliceOffset()
+    if calcCompare1_Offset == currentCompare1_Offset:
+      return
+    self.tileViewSync(False)
+    self.ui.slicePositionSlider.setValue(calcCompare1_Offset)
+    self.tileViewSync(True)
+
+  def tileViewSelectSliceVisible(self,Visible):
+    #３Dビューへのスライス断面表示　割り込み制御
+    self.CrosshairNode = slicer.mrmlScene.GetFirstNodeByClass('vtkMRMLCrosshairNode')
+    
+    if Visible:
+      if self.CrosshairNode:
+        self.CrosshairNodeObserverTag = self.CrosshairNode.AddObserver(slicer.vtkMRMLCrosshairNode.CursorPositionModifiedEvent, self.sliceVisibleProcessEvent)
+    else:
+      self.CrosshairNode.RemoveObserver(self.CrosshairNodeObserverTag)
+
+  def sliceVisibleProcessEvent(self, observee, event):
+    #３Dビューへのスライス断面表示
+    xyz = [0.0, 0.0, 0.0]
+    sliceNode = None
+    if self.CrosshairNode:
+      sliceNode = self.CrosshairNode.GetCursorPositionXYZ(xyz)
+
+    slicer.compareWidgets = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)) for i in range(1, 17)]
+    if sliceNode:
+      sliceWidget = slicer.app.layoutManager().sliceWidget(sliceNode.GetName())
+      self.tileViewSync(True)
+      for compareWidget in slicer.compareWidgets:
+        if sliceWidget != compareWidget:
+          compareNode = compareWidget.mrmlSliceNode()
+          compareNode.SetWidgetVisible(False)
+        else:
+          compareNode = compareWidget.mrmlSliceNode()
+          compareNode.SetWidgetVisible(True)
+    else:
+      self.tileViewSync(False)
+      for compareWidget in slicer.compareWidgets:
+        compareNode = compareWidget.mrmlSliceNode()
+        compareNode.SetWidgetVisible(False)
+
+
   def onTileOrientationChanged(self):
     if self._isLoadingState:
       return
+    self.tileViewSync(False)
     #setSliceOrientation()
     index = self.ui.directionCombo.currentData
 
+    #切り替え時に、他の画面のオフセット値をリセット 断面ずれるので。
+    #表示の断面の位置を読み込み各画面に反映追加。。。
     orientationList = ["Axial", "Sagittal", "Coronal"]
     orientation = orientationList[index]
-    for i in range(1, 17):
-      compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
-      compare.setSliceOrientation(orientation)
+    print(orientation)
+    
+    sliceViewLabelList = ["Red","Yellow","Green"]
+    sliceViewLabel = sliceViewLabelList[index]
+    
+    interval = self.ui.sliceIntervalSlider.value
+    
+    self.tileSliceViewSet(sliceViewLabel,interval)
+    qt.QTimer.singleShot(0, self.tileViewSyncOn)
+    #self.tileViewSync(True)
+
 
   def onTileIntervalSliderChanged(self):
     if self._isLoadingState:
       return
-
+    self.tileViewSync(False)
     compare = slicer.app.layoutManager().sliceWidget('Compare1')
     logic = compare.sliceLogic()
     interval = self.ui.sliceIntervalSlider.value
 
-    self.ui.sliceIntervalText.setText(str(interval) + " mm")
+    #self.ui.sliceIntervalText.setText('{:.0f}'.str(interval) + " mm" )
+    self.ui.sliceIntervalText.setText('{:.1f}'.format(interval) + " mm" )
     offset = logic.GetSliceOffset()
     for i in range(2, 17):
       offset = offset + interval
       compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
       logic = compare.sliceLogic()
       logic.SetSliceOffset(offset)
+    #self.tileViewSync(True)
 
   def onTileIntervalSelectorChanged(self):
     if self._isLoadingState:
@@ -475,10 +727,11 @@ class RFVisualizationWidget(RFViewerWidget):
     interval = self.ui.sliceIntervalSelector.currentData
     self.ui.sliceIntervalSlider.setValue(interval)
 
+
   def onTilePositionSliderChanged(self):
     if self._isLoadingState:
       return
-
+    self.tileViewSync(False)
     compare = slicer.app.layoutManager().sliceWidget('Compare1')
     logic = compare.sliceLogic()
     posOffset = self.ui.slicePositionSlider.value
@@ -491,20 +744,17 @@ class RFVisualizationWidget(RFViewerWidget):
       compare = slicer.app.layoutManager().sliceWidget('Compare' + str(i))
       logic = compare.sliceLogic()
       logic.SetSliceOffset(offset)
+    #self.tileViewSync(True)
 
-
-
-  def onTilePositionSelectorChanged(self):
-    if self._isLoadingState:
-      return
-    
-    offset = self.ui.sliceIntervalSelector.currentData
-    self.ui.slicePositionSlider.setValue(offset)
 
   def onTileLayoutChanged(self):
     if self._isLoadingState:
       return
 
+    #レイアウト変更にため、再描画
+    if self.tileViewSyncFlg:
+      self.tileViewSync(False)
+    
     #タブビュー機能追加　タブレイアウトへ各レイアウト設定の入れ込み
     layoutManager = slicer.app.layoutManager()
     
@@ -513,6 +763,37 @@ class RFVisualizationWidget(RFViewerWidget):
     
     slicer.modules.RFViewerHomeWidget.centralWidgetLayout("",tileLayout,"",1)
     #-------------------------------------------
+    
+    #タイルビューのレイアウトスタイル設定　マウスホバー時の枠設定
+    self.tileViewLaoutStyle()
+    
+    index = self.ui.directionCombo.currentData
+    
+    orientationList = ["Axial", "Sagittal", "Coronal"]
+    orientation = orientationList[index]
+    
+    sliceViewLabelList = ["Red","Yellow","Green"]
+    sliceViewLabel = sliceViewLabelList[index]
+    
+    interval = self.ui.sliceIntervalSlider.value
+    self.tileSliceViewSet(sliceViewLabel,interval)
+    #処理終了後にFOVをセット（FOV値ズレ）
+    qt.QTimer.singleShot(0, self.FOVset)
+    
+    #連動用の割り込み処理許可
+    self.ui.customMouseAction2D()#タイルビュー追加に伴い追加
+    #３Dのマウス操作はウィジェット内で行っています。
+    self.tileViewSync(True)
+    self.tileViewSelectSliceVisible(True)
+
+  def FOVset(self):
+    #タイルビューのFOV設定
+    slicer.compareWidgets = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)) for i in range(1, 17)]
+    for compareWidget in slicer.compareWidgets:
+      compareLogic = compareWidget.sliceLogic()
+      compareLogic.FitFOVToBackground(200)
+      compareLogic.Modified()
+    
  
   #--- for cephalometric 20220924 koyanagi --- add
   def onFOVChanged(self):
@@ -892,3 +1173,14 @@ class RFVisualizationWidget(RFViewerWidget):
     self.ui.slabThicknessSlider.setValue(self._NumberOfSlices_Setting[0])
     self.ui.setMIPThickness(self._NumberOfSlices_Setting[0])
     #print("_NumberOfSlices_Setting",self._NumberOfSlices_Setting[0])
+    
+
+
+
+
+
+
+
+
+
+

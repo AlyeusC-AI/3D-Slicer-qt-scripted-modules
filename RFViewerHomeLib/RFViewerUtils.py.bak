@@ -90,8 +90,6 @@ class Icons(object):
 
     AllReset = qt.QIcon(":/Icons/AllReset.png")
     ResetMPR = qt.QIcon(":/Icons/ResetMPR.png")
-    mirror = qt.QIcon(":/Icons/Mirror.png")
-
 class WidgetUtils(object):
     """Helper class to extract widgets linked to an existing widget representation
     """

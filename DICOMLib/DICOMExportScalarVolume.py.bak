@@ -2,7 +2,7 @@ from __future__ import print_function
 import os
 import glob
 import slicer
-import qt
+
 #########################################################
 #
 #
@@ -100,16 +100,11 @@ class DICOMExportScalarVolume(object):
     Export the volume data using the ITK-based utility
     TODO: confirm that resulting file is valid - may need to change the CLI
     to include more parameters or do a new implementation ctk/DCMTK
-    
-
+    See:
     http://sourceforge.net/apps/mediawiki/gdcm/index.php?title=Writing_DICOM
     TODO: add more parameters to the CLI and/or find a different
     mechanism for creating the DICOM files
     """
-
-
-    
-
     cliparameters = {}
     # Patient
     cliparameters['patientName'] = self.tags['Patient Name']
@@ -117,8 +112,6 @@ class DICOMExportScalarVolume(object):
     cliparameters['patientBirthDate'] = self.tags['Patient Birth Date']
     cliparameters['patientSex'] = self.tags['Patient Sex']
     cliparameters['patientComments'] = self.tags['Patient Comments']
-    # cliparameters['PatientAge'] = self.tags['Patient Age']
-    
     # Study
     cliparameters['studyID'] = self.tags['Study ID']
     cliparameters['studyDate'] = self.tags['Study Date']
@@ -145,64 +138,8 @@ class DICOMExportScalarVolume(object):
 
     cliparameters['dicomDirectory'] = self.directory
     cliparameters['dicomPrefix'] = self.filenamePrefix
-    
-    # add
-    cliparameters['transferSyntaxUID'] = self.tags['Transfer Syntax UID']
-    
-    cliparameters['ImplementationClassUID'] = self.tags['Implementation Class UID']
-    cliparameters['implementationVersionName'] = self.tags['Implementation Version Name']
-    
-    cliparameters['sourceApplicationEntityTitle'] = self.tags['Source Application Entity Title']
-    cliparameters['specificCharacterSet'] = self.tags['Specific Character Set']
-    cliparameters['instanceCreationDate'] = self.tags['Instance Creation Date']
-    cliparameters['instanceCreationTime'] = self.tags['Instance Creation Time']
-    cliparameters['SOPInstanceUID'] = self.tags['SOP Instance UID']
-    cliparameters['protocolName'] = self.tags['Protocol Name']
-    cliparameters['scanOptions'] = self.tags['Scan Options']
-    cliparameters['contrastBolusAgent'] = self.tags['Contrast Bolus Agent']
-    cliparameters['softwareVersions'] = self.tags['Software Versions']
-    cliparameters['distanceSourcetoDetector'] = self.tags['Distance Source to Detector']
-    cliparameters['distanceSourcetoPatient'] = self.tags['Distance Source to Patient']
-    cliparameters['rotationDirection'] = self.tags['Rotation Direction']
-    cliparameters['filterType'] = self.tags['Filter Type']
-    cliparameters['convolutionKernel'] = self.tags['Convolution Kernel']
-    cliparameters['patientPosition'] = self.tags['Patient Position']
-    cliparameters['acquisitionNumber'] = self.tags['Acquisition Number']
-    cliparameters['instanceNumber'] = self.tags['Instance Number']
-    cliparameters['rows'] = self.tags['Rows']
-    cliparameters['columns'] = self.tags['Columns']
-    cliparameters['windowCenter'] = self.tags['Window Center']
-    cliparameters['windowWidth'] = self.tags['Window Width']
-    cliparameters['institutionName'] = self.tags['Institution Name']
-    cliparameters['kvp'] = self.tags['kvp']
-    print ("cliparameters['kvp']", cliparameters['kvp'])
-    #  add 4/25
-    cliparameters['AcquisitionDate'] = self.tags['Acquisition Date']
-    cliparameters['AcquisitionTime'] = self.tags['Acquisition Time']
-    cliparameters['InstitutionAddress'] = self.tags['Institution Address']
-    cliparameters['StationName'] = self.tags['Station Name']
-    cliparameters['InstitutionalDepartmentName'] = self.tags['Institutional Department Name']
-    cliparameters['PerformingPhysicianName'] = self.tags['Performing Physician Name']
-    cliparameters['OperatorName'] = self.tags['Operator Name']
-    cliparameters['DataCollectionDiameter'] = self.tags['Data Collection Diameter']
-    cliparameters['ReconstructionDiameter'] = self.tags['Reconstruction Diameter']
-    cliparameters['EstimatedRadiographicMagnificationFactor'] = self.tags['Estimated Radiographic Magnification Factor']
-    cliparameters['XrayTubeCurrent'] = self.tags['Xray Tube Current']
-    cliparameters['ImagePosition'] = self.tags['Image Position']
-    cliparameters['ImageOrientation'] = self.tags['Image Orientation']
-    cliparameters['Location'] = self.tags['Location']
-    cliparameters['SliceLocation'] = self.tags['Slice Location']
-    cliparameters['NumberofFrames'] = self.tags['Number of Frames']
 
-
-    cliparameters['MediaStorageSOPInstanceUID'] = self.tags['Media Storage SOP Instance UID']
-    
-    # cliparameters[''] = self.tags['']
-    # cliparameters[''] = self.tags['']
-    # cliparameters[''] = self.tags['']
-    # cliparameters[''] = self.tags['']
-    # cliparameters[''] = self.tags['']
-    
+    #
     # run the task (in the background)
     # - use the GUI to provide progress feedback
     # - use the GUI's Logic to invoke the task

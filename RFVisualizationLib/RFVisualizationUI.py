@@ -154,14 +154,15 @@ class RFVisualizationUI(qt.QStackedWidget):
 
     #4
     self._tileLayout.addRow(self._createSeparator())
-    layoutPre = qt.QHBoxLayout()
-    layoutPre.addWidget(self._createLabel(self.tr("断層厚")))#self.tr("MIP thickness: ")
+    layoutPre2 = qt.QHBoxLayout()
+    layoutPre2.addWidget(self._createLabel(self.tr("断層厚")))#self.tr("MIP thickness: ")
     self.thicknessText = qt.QLabel() #厚み表示
     self.thicknessText.setStyleSheet("QLabel {min-width: 50px; max-width: 50px;}")
-    layoutPre.addWidget(self.thicknessText)
-    layoutPre.addWidget(self.slabThicknessSlider)
-    layoutPre.addWidget(self.thicknessSelector)
-    self._tileLayout.addRow(layoutPre)
+    A = self.slabThicknessSlider
+    layoutPre2.addWidget(self.thicknessText)
+    layoutPre2.addWidget(A)
+    layoutPre2.addWidget(self.thicknessSelector)
+    self._tileLayout.addRow(layoutPre2)
 
     #5
     layoutPre = qt.QHBoxLayout()
@@ -177,11 +178,11 @@ class RFVisualizationUI(qt.QStackedWidget):
     self.sliceIntervalText.setStyleSheet("QLabel {min-width: 50px; max-width: 50px;}")
     layoutPre.addWidget(self.sliceIntervalText)
 
-    self.sliceIntervalSlider = qt.QSlider()
-    self.sliceIntervalSlider.singleStep = 1
-    self.sliceIntervalSlider.pageStep = 5
-    self.sliceIntervalSlider.minimum = 1
-    self.sliceIntervalSlider.maximum = 100
+    self.sliceIntervalSlider = ctk.ctkDoubleSlider()
+    self.sliceIntervalSlider.singleStep = 0.1
+    self.sliceIntervalSlider.pageStep = 0.1
+    self.sliceIntervalSlider.minimum = 0.1
+    self.sliceIntervalSlider.maximum = 50
     self.sliceIntervalSlider.setOrientation(qt.Qt.Horizontal)
     self.sliceIntervalSlider.setValue(1)
     layoutPre.addWidget(self.sliceIntervalSlider)
@@ -194,7 +195,9 @@ class RFVisualizationUI(qt.QStackedWidget):
     layoutPre = qt.QHBoxLayout()
     layoutPre.addWidget(self._createLabel(self.tr("位置")))
 
-    self.slicePositionSlider = qt.QSlider()
+    #後でボリュームサイズから値をとるように修正必要
+    #またはオフセットのスライドバーから値を取得
+    self.slicePositionSlider = ctk.ctkDoubleSlider()
     self.slicePositionSlider.singleStep = 1
     self.slicePositionSlider.pageStep = 5
     self.slicePositionSlider.minimum = 1
@@ -203,8 +206,6 @@ class RFVisualizationUI(qt.QStackedWidget):
     self.slicePositionSlider.setValue(1)
     layoutPre.addWidget(self.slicePositionSlider)
 
-    self.slicePositionSelector = self.createSlicePositionCombobox()
-    layoutPre.addWidget(self.slicePositionSelector)
     self._tileLayout.addRow(layoutPre)
 
 
@@ -229,32 +230,115 @@ class RFVisualizationUI(qt.QStackedWidget):
     layoutPre.addWidget(self._createLabel(self.tr("")))
     self._tileLayout.addRow(layoutPre)
 
-    self.add3DView()
-
-  def add3DView(self):
     #10(VR View)
-    # layout name is used to create and identify the underlying view node and  should be set to a value that is not used in any of the layouts owned by the layout manager
-    layoutName = "Test3DView"
+    self.tileThreeDViewWidget = self.createThreeDViewWidget()
+    layoutPre.addWidget(self.tileThreeDViewWidget)
+    self._tileLayout.addRow(layoutPre)
+    #self.tileThreeDViewWidget.hide()
+    #10　3DViewWidget
+    #self.add3DView()
+
+
+  def createThreeDViewWidget(self):
+    """
+    3DViewWidgetの作成
+    """
+    layoutName = "Tile3DView"
     layoutLabel = "T3"
     layoutColor = [1.0, 1.0, 0.0]
-    # ownerNode manages this view instead of the layout manager (it can be any node in the scene)
+    # ownerNode　一旦このまま使用
     viewOwnerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScriptedModuleNode")
-
+    
     # Create MRML node
     viewNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLViewNode")
-    viewNode.SetLayoutLabel(layoutLabel)
+    viewNode.SetName(slicer.mrmlScene.GetUniqueNameByString('ViewTile'))
+    viewNode.SetLayoutName(layoutName)
+    viewNode.SetLayoutLabel(layoutLabel)#(ラベルの設定不足している)
     viewNode.SetLayoutColor(layoutColor)
     viewNode.SetAndObserveParentLayoutNodeID(viewOwnerNode.GetID())
-
+    
+    #背景色の設定
+    viewNode.SetBackgroundColor(0.5,0.5,0.5)
+    viewNode.SetBackgroundColor2(0.8,0.8,0.8)
+    
+    viewLogic = slicer.vtkMRMLViewLogic()
+    viewLogic.SetName(layoutName)
+    viewLogic.SetMRMLScene(slicer.mrmlScene)
+    viewLogic.SetViewNode(viewNode)
+    
+    #カメラノードの設定　一旦、デフォルトシーンカメラの自動割振で対応
+    #下記リンク付けが何か不足している。あとで確認
+    #cameraNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLCameraNode")
+    #cameraNode.SetName(slicer.mrmlScene.GetUniqueNameByString('CameraTile'))
+    #cameraNode.SetActiveTag(viewNode.GetID())
+    #viewLogic.SetCameraNode(cameraNode)
+    
     # Create widget
     viewWidget = slicer.qMRMLThreeDWidget()
     viewWidget.setMRMLScene(slicer.mrmlScene)
     viewWidget.setMRMLViewNode(viewNode)
+    viewWidget.setFixedSize(350,300)
+    
+    #マウス操作の割り振り
+    cameraDisplayableManager = viewWidget.threeDView().displayableManagerByClassName("vtkMRMLCameraDisplayableManager")
+    cameraWidget = cameraDisplayableManager.GetCameraWidget()
+
+    #Remove Button Action
+    # Right 
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Left
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Middle
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+    # Mouse Wheel
+    cameraWidget.SetEventTranslation(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MouseWheelForwardEvent, vtk.vtkEvent.NoModifier, vtk.vtkWidgetEvent.NoEvent)
+    cameraWidget.SetEventTranslation(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MouseWheelBackwardEvent, vtk.vtkEvent.NoModifier, vtk.vtkWidgetEvent.NoEvent)
+
+    # Set New Button Action
+    # Left
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateTranslate, cameraWidget.WidgetEventTranslateStart, cameraWidget.WidgetEventTranslateEnd)
+    # Right 
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, cameraWidget.WidgetEventRotateStart, cameraWidget.WidgetEventRotateEnd)
+    # Middle
+    cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, cameraWidget.WidgetEventScaleStart, cameraWidget.WidgetEventScaleEnd)
+    
+    return viewWidget
+
+
+  def add3DView(self):
+    #10(VR View)
+    # layout name is used to create and identify the underlying view node and  should be set to a value that is not used in any of the layouts owned by the layout manager
+    layoutName = "Tile3DView"
+    layoutLabel = "T3"
+    layoutColor = [1.0, 1.0, 0.0]
+    # ownerNode manages this view instead of the layout manager (it can be any node in the scene)
+    viewOwnerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScriptedModuleNode")
+    
+    # Create MRML node
+    # mrmlSceneにビューノード追加
+    viewNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLViewNode")
+    viewNode.SetName(slicer.mrmlScene.GetUniqueNameByString('ViewTile'))
+    viewNode.SetLayoutName(layoutName)
+    viewNode.SetLayoutLabel(layoutLabel)
+    viewNode.SetLayoutColor(layoutColor)
+    viewNode.SetAndObserveParentLayoutNodeID(viewOwnerNode.GetID())
+    
+    #背景色の設定
+    viewNode.SetBackgroundColor(0.5,0.5,0.5)
+    viewNode.SetBackgroundColor2(0.8,0.8,0.8)
+    
+    viewLogic = slicer.vtkMRMLViewLogic()
+    viewLogic.SetMRMLScene(slicer.mrmlScene)
+    viewLogic.SetViewNode(viewNode)
+    
+    # Create widget
+    viewWidget = slicer.qMRMLThreeDWidget()
+    viewWidget.setMRMLScene(slicer.mrmlScene)
+    viewWidget.setMRMLViewNode(viewNode)
+    viewWidget.setFixedSize(350,400)
 
     layoutPre = qt.QHBoxLayout()
-    layoutPre.addWidget(slicer.modules.reformat.widgetRepresentation())
     layoutPre.addWidget(viewWidget)
-    slicer.modules.reformat.widgetRepresentation().setVisible(True)
     self._tileLayout.addRow(layoutPre)
 
 
@@ -824,38 +908,14 @@ class RFVisualizationUI(qt.QStackedWidget):
     selector.addItem(self.tr("1mm"), 1)
     selector.addItem(self.tr("5mm"), 5)
     selector.addItem(self.tr("10mm"), 10)
-    selector.addItem(self.tr("80mm"), 80)
-    selector.addItem(self.tr("100mm"), 100)
-    selector.addItem(self.tr("120mm"), 120)
-    selector.addItem(self.tr("140mm"), 140)
-    selector.addItem(self.tr("160mm"), 160)
-    selector.addItem(self.tr("180mm"), 180)
-    selector.setCurrentText(self.tr("80mm"))
+    selector.addItem(self.tr("20mm"), 20)
+    selector.addItem(self.tr("50mm"), 50)
+    selector.setCurrentText(self.tr("10mm"))
     selector.setStyleSheet("""
         QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
         QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
     return selector
 
-  def createSlicePositionCombobox(self):
-    selector = qt.QComboBox()
-    selector.setToolTip(self.tr("Select the position of slice of tile view (xx mm)"))
-    # 任意の値に設定してください
-    selector.addItem(self.tr("0.2mm"), 0.2)
-    selector.addItem(self.tr("0.5mm"), 0.5)
-    selector.addItem(self.tr("1mm"), 1)
-    selector.addItem(self.tr("5mm"), 5)
-    selector.addItem(self.tr("10mm"), 10)
-    selector.addItem(self.tr("80mm"), 80)
-    selector.addItem(self.tr("100mm"), 100)
-    selector.addItem(self.tr("120mm"), 120)
-    selector.addItem(self.tr("140mm"), 140)
-    selector.addItem(self.tr("160mm"), 160)
-    selector.addItem(self.tr("180mm"), 180)
-    selector.setCurrentText(self.tr("80mm"))
-    selector.setStyleSheet("""
-        QComboBox {padding: 0px; padding-left: 4px; margin: 1px; spacing: 0; max-width: 9px; min-width: 9px;}
-        QComboBox QAbstractItemView {border: 2px solid darkgray; selection-background-color: lightgray; max-width: 60px; min-width: 60px;}""")#レイアウト変更
-    return selector
 
   #--- for cephalometric 20220924 koyanagi --- replacement
   def createRaycastCombobox(self):
@@ -935,7 +995,8 @@ class RFVisualizationUI(qt.QStackedWidget):
     cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateRotate, cameraWidget.WidgetEventRotateStart, cameraWidget.WidgetEventRotateEnd)
     # Middle
     cameraWidget.SetEventTranslationClickAndDrag(cameraWidget.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, cameraWidget.WidgetStateScale, cameraWidget.WidgetEventScaleStart, cameraWidget.WidgetEventScaleEnd)
- 
+
+
   def customMouseAction2D(self):
     lm = slicer.app.layoutManager()
     for sliceViewName in lm.sliceViewNames():
@@ -949,3 +1010,21 @@ class RFVisualizationUI(qt.QStackedWidget):
       # Set New Button Action 
       w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateMPR, w.WidgetEventMPRStart, w.WidgetEventMPREnd)
       w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, w.WidgetEventZoomSliceStart, w.WidgetEventZoomSliceEnd)
+
+
+  def customMouseActionTile2D(self):
+    slicer.compareViewWidgets = [slicer.app.layoutManager().sliceWidget('Compare' + str(i)) for i in range(1, 17)]
+    for compareViewWidget in slicer.compareViewWidgets:
+      displayableManager = compareViewWidget.sliceView().displayableManagerByClassName("vtkMRMLCrosshairDisplayableManager")
+      w = displayableManager.GetSliceIntersectionWidget()
+
+      #Remove Button Action
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.RightButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, vtk.vtkWidgetEvent.NoEvent, vtk.vtkWidgetEvent.NoEvent)
+      
+      # Set New Button Action 
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.LeftButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateMPR, w.WidgetEventMPRStart, w.WidgetEventMPREnd)
+      w.SetEventTranslationClickAndDrag(w.WidgetStateIdle, vtk.vtkCommand.MiddleButtonPressEvent, vtk.vtkEvent.NoModifier, w.WidgetStateZoomSlice, w.WidgetEventZoomSliceStart, w.WidgetEventZoomSliceEnd)
+      
+      
+

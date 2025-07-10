@@ -131,7 +131,12 @@ class RFViewerHomeWidget(RFViewerWidget):
 
         # Instantiate Toolbar and module widgets
         self._toolbarWidget = ToolbarWidget()
+        self._toolbarWidget.setSizePolicy(0x3,0x3)
         self._toolbarTileWidget = ToolbarWidget()
+        self._toolbarTileWidget.setSizePolicy(0x3,0x3)
+        self._toolbarTileWidget.setMinimumSize(100,100)
+        self._toolbarTileWidget.setFixedSize(100,100)
+        self._toolbarTileWidget.setMaximumSize(100,100)
 
         self._stackedWidget = qt.QStackedWidget()
         self._stackedWidget.addWidget(self._toolbarWidget)
@@ -172,10 +177,10 @@ class RFViewerHomeWidget(RFViewerWidget):
         # self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
         # self.dock_content.layout().insertWidget(3, self.toolbarButton)
 
-        self.dock_content.layout().insertWidget(1, self._showhidebutton)
-        self.dock_content.layout().insertWidget(2, self._patientInfoWidget)
-        self.dock_content.layout().insertWidget(3, separator)
-        self.dock_content.layout().insertWidget(4, self.toolbarButton)
+        self.dock_content.layout().insertWidget(1, self._showhidebutton,0,0x0020)
+        self.dock_content.layout().insertWidget(2, self._patientInfoWidget,0,0x0020)
+        self.dock_content.layout().insertWidget(3, separator,0,0x0020)
+        self.dock_content.layout().insertWidget(4, self.toolbarButton,0,0x0020)
 
         self._showhidebutton.clicked.connect(self.showhidePanel)
         # self._showhidebutton.move(10,10)
@@ -200,7 +205,7 @@ class RFViewerHomeWidget(RFViewerWidget):
 
         # Close toolbar section and add stretch
         self._toolbarWidget.closeLastSection()
-    #    self.layout.addStretch()
+        #self.layout.addStretch()
 
         # Load visualisation module by default
         self._moduleWidget1.setModule(
@@ -627,10 +632,14 @@ class RFViewerHomeWidget(RFViewerWidget):
         #ツールバー変更
         if index == 1:
             self._stackedWidget.setCurrentIndex(1)
+            self._stackedWidget.resize(100,100)
+            self._stackedWidget.setFixedSize(100,100)
             slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
         else:
             self._stackedWidget.setCurrentIndex(0)
+            self._stackedWidget.setFixedSize(300,300)
             slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(0)
+            
 
     def changeToMainLayout(self):
         #タイルビューを削除　意図が違いましたら修正お願い致します。
@@ -644,9 +653,13 @@ class RFViewerHomeWidget(RFViewerWidget):
         #タイルビュー追加（タブビュー付き）
         layoutManager = slicer.app.layoutManager()
         
-        #既にタイルビューある場合、処理検討中
-        if not slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").isTabEnabled(1):
-            tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
+        #既にタイルビューある場合、処理検討中　一部修正
+        if slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar"):
+            if not slicer.util.mainWindow().CentralWidget.CentralWidgetLayoutFrame.findChild("QTabBar").isTabEnabled(1):
+                tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
+            else:
+                #初期値は４×４
+                tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
         else:
             #初期値は４×４
             tileLayout = layoutManager.layoutLogic().GetLayoutNode().GetLayoutDescription(RFLayoutType.RFTileLayout4x4)
@@ -660,7 +673,16 @@ class RFViewerHomeWidget(RFViewerWidget):
         
         #ツールバー変更
         self._stackedWidget.setCurrentIndex(1)
+        self._stackedWidget.resize(100,100)#####################################################################################
         slicer.modules.rfvisualization.widgetRepresentation().self().ui.setCurrentIndex(1)
+        #
+        #slicer.modules.RFVisualizationWidget.tileViewSetup()#syokika
+        qt.QTimer.singleShot(0, slicer.modules.RFVisualizationWidget.tileViewSetup)
+
+        #slicer.modules.RFVisualizationWidget.tileViewSetup()#syokika
+        #sliceNodes = slicer.util.getNodesByClass('vtkMRMLSliceNode')
+        #for sliceNode in sliceNodes:
+        #  sliceNode.Modified()
 
     def centralWidgetLayout(self, mainViewLayout, tileViewLayout, panoramicViewLayout, tabSetIndex):
         #センターウィジェットのレイアウト管理部　新規作成部になります。

@@ -150,7 +150,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R1</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -168,7 +168,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare3\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R3</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -191,7 +191,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R1</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -216,7 +216,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare4\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R4</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -241,7 +241,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare7\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R7</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -271,7 +271,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare1\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R1</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -303,7 +303,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare5\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R5</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -335,7 +335,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare9\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R9</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
@@ -367,7 +367,7 @@ def layoutSetup(layoutManager):
                         <view class=\"vtkMRMLSliceNode\" singletontag=\"Compare13\">
                             <property name=\"orientation\" action=\"default\">Axial</property>
                             <property name=\"viewlabel\" action=\"default\">R13</property>
-                            <property name=\"viewcolor\" action=\"default\">#F34A33</property>
+                            <property name=\"viewcolor\" action=\"default\">#f9a99f</property>
                         </view>
                     </item>
                     <item>
